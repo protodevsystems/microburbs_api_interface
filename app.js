@@ -18,6 +18,7 @@ const btnLoader = document.getElementById('btnLoader');
 let currentProperties = [];
 let currentSuburb = '';
 let currentInvestorMetrics = null;
+let lastFetchedData = null;
 
 // Utility function for number formatting
 function formatNumber(num) {
@@ -79,6 +80,9 @@ async function fetchSuburbData() {
         
         const data = await response.json();
         console.log('Data received:', data);
+        
+        // Store fetched data globally for use in calculator and other features
+        lastFetchedData = data;
         
         hideLoading();
         displayResults(suburb, data);
