@@ -5631,25 +5631,25 @@ function detectFromDescription(property) {
     const patterns = [
         // North
         { 
-            regex: /north(?:ern)?[- ]facing|northerly aspect|faces? (?:the )?north|north to rear|north[- ]facing (?:backyard|living|aspect)/gi,
+            regex: /north(?:ern)?[- ]facing|northerly aspect|faces? (?:the )?north|north to rear/gi,
             orientation: 'North',
             confidence: 'high'
         },
         // South
         { 
-            regex: /south(?:ern)?[- ]facing|southerly aspect|faces? (?:the )?south|south to rear|south[- ]facing (?:backyard|living|aspect)/gi,
+            regex: /south(?:ern)?[- ]facing|southerly aspect|faces? (?:the )?south|south to rear/gi,
             orientation: 'South',
             confidence: 'high'
         },
         // East
         { 
-            regex: /east(?:ern)?[- ]facing|easterly aspect|faces? (?:the )?east|east to rear|east[- ]facing (?:backyard|living|aspect)/gi,
+            regex: /east(?:ern)?[- ]facing|easterly aspect|faces? (?:the )?east|east to rear/gi,
             orientation: 'East',
             confidence: 'high'
         },
         // West
         { 
-            regex: /west(?:ern)?[- ]facing|westerly aspect|faces? (?:the )?west|west to rear|west[- ]facing (?:backyard|living|aspect)/gi,
+            regex: /west(?:ern)?[- ]facing|westerly aspect|faces? (?:the )?west|west to rear/gi,
             orientation: 'West',
             confidence: 'high'
         },
@@ -5695,17 +5695,55 @@ function detectFromDescription(property) {
     for (let pattern of patterns) {
         const matches = text.match(pattern.regex);
         if (matches) {
-            const excerpt = extractExcerpt(text, matches[0]);
+            const matchText = matches[0];
+            const excerpt = extractExcerpt(text, matchText);
+            
+            // CRITICAL: Check if the orientation refers to yard/backyard/outdoor area
+            // If so, the house faces the OPPOSITE direction
+            const contextStart = Math.max(0, text.indexOf(matchText.toLowerCase()) - 50);
+            const contextEnd = Math.min(text.length, text.indexOf(matchText.toLowerCase()) + matchText.length + 20);
+            const context = text.substring(contextStart, contextEnd);
+            
+            // Keywords that indicate the orientation is for outdoor spaces (not the house)
+            const outdoorKeywords = ['yard', 'backyard', 'back yard', 'garden', 'outdoor', 'alfresco', 'deck', 'patio', 'terrace', 'balcony'];
+            const isOutdoorOrientation = outdoorKeywords.some(keyword => context.includes(keyword));
+            
+            let finalOrientation = pattern.orientation;
+            let reasoning = `Found "${matchText}" in property description: "${excerpt}"`;
+            
+            if (isOutdoorOrientation) {
+                // Invert the direction - if yard faces north, house faces south
+                finalOrientation = invertOrientation(pattern.orientation);
+                reasoning = `Found "${matchText}" referring to outdoor area (yard/backyard) in description: "${excerpt}". ` +
+                           `Since the ${context.match(outdoorKeywords.join('|'))?.[0] || 'outdoor area'} faces ${pattern.orientation}, ` +
+                           `the house itself faces the opposite direction: ${finalOrientation}`;
+            }
+            
             return {
-                orientation: pattern.orientation,
+                orientation: finalOrientation,
                 confidence: pattern.confidence,
                 method: 'Text Mining',
-                reasoning: `Found "${matches[0]}" in property description: "${excerpt}"`
+                reasoning: reasoning
             };
         }
     }
     
     return null;
+}
+
+// Helper: Invert orientation (yard faces north = house faces south)
+function invertOrientation(orientation) {
+    const inversions = {
+        'North': 'South',
+        'South': 'North',
+        'East': 'West',
+        'West': 'East',
+        'North-East': 'South-West',
+        'North-West': 'South-East',
+        'South-East': 'North-West',
+        'South-West': 'North-East'
+    };
+    return inversions[orientation] || orientation;
 }
 
 // Method 2: Detect from street name patterns
