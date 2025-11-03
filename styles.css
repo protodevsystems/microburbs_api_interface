@@ -5021,12 +5021,44 @@ canvas {
     padding: 1.5rem;
     text-align: center;
     transition: all 0.3s;
+    position: relative;
 }
 
 .method-card:hover {
     border-color: var(--accent-color);
     transform: translateY(-3px);
     box-shadow: 0 5px 20px rgba(253, 119, 0, 0.2);
+}
+
+.method-card.highlight-new {
+    background: linear-gradient(135deg, rgba(253, 119, 0, 0.15), rgba(253, 119, 0, 0.05));
+    border: 2px solid var(--accent-color);
+    box-shadow: 0 5px 25px rgba(253, 119, 0, 0.3);
+    animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+    0%, 100% {
+        box-shadow: 0 5px 25px rgba(253, 119, 0, 0.3);
+    }
+    50% {
+        box-shadow: 0 5px 35px rgba(253, 119, 0, 0.5);
+    }
+}
+
+.method-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: var(--accent-color);
+    color: var(--bg-primary);
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.25rem 0.6rem;
+    border-radius: 20px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 10px rgba(253, 119, 0, 0.5);
 }
 
 .method-icon {

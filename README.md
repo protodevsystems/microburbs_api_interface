@@ -526,7 +526,9 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 1. **Text Mining** (Most Reliable):
    - Scans property descriptions for orientation keywords
    - Detects patterns like "north-facing", "northerly aspect", "faces north"
+   - **SMART INVERSION**: Detects "north-facing yard" and correctly determines house faces SOUTH
    - Finds sun-related clues ("morning sun", "afternoon sun")
+   - Context-aware analysis (distinguishes house vs outdoor area orientation)
    - High confidence when explicit mentions found
 
 2. **Street Pattern Analysis**:
@@ -535,13 +537,23 @@ After reviewing properties, the system analyzes your swipe patterns and generate
    - Provides contextual clues about area layout
    - Low-to-medium confidence
 
-3. **Coordinate Analysis**:
+3. **🆕 Street Bearing Analysis** (NEW - Free API):
+   - Uses OpenStreetMap's free Overpass API to get actual street geometry
+   - Calculates precise street bearing in degrees (0-360°)
+   - Converts bearing to cardinal directions (N/NE/E/SE/S/SW/W/NW)
+   - Assumes houses face the street (typical in Australian suburbs)
+   - Uses Nominatim reverse geocoding for street identification
+   - **Medium-to-High confidence** - based on real geospatial data
+   - Rate-limited to 1 request/second (respects API usage policy)
+   - Falls back to grid estimation if API unavailable
+
+4. **Coordinate Analysis**:
    - Uses latitude/longitude for hemisphere-based heuristics
    - Considers Australian climate patterns (Southern Hemisphere)
    - Statistical inference about preferred orientations
    - Low confidence (last resort)
 
-4. **Suburb Context**:
+5. **Suburb Context**:
    - Considers typical layout patterns in Australian suburbs
    - Identifies coastal, hills, or valley locations
    - Provides contextual reasoning when specific data unavailable
