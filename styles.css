@@ -5175,18 +5175,21 @@ canvas {
 }
 
 .score-card-property {
-    margin-bottom: 1rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .property-address {
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
     margin-bottom: 0.5rem;
+    line-height: 1.4;
 }
 
-.property-price {
-    font-size: 1.5rem;
+.scored-property-card .property-price {
+    font-size: 1.3rem;
     font-weight: 700;
     color: var(--accent-color);
 }
@@ -5244,17 +5247,21 @@ canvas {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .view-details-btn {
-    padding: 0.6rem 1.2rem;
+    padding: 0.5rem 1rem;
     background: rgba(253, 119, 0, 0.1);
     border: 2px solid var(--accent-color);
     border-radius: 8px;
     color: var(--accent-color);
     font-weight: 600;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: all 0.3s;
+    white-space: nowrap;
 }
 
 .view-details-btn:hover {
@@ -5264,7 +5271,8 @@ canvas {
 
 .score-rank {
     color: var(--text-secondary);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
+    white-space: nowrap;
 }
 
 /* Score Modal */
