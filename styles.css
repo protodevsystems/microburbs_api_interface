@@ -4586,7 +4586,7 @@ canvas {
 }
 
 .matchup-card .btn-vote {
-    width: 100%;
+    
     padding: 1rem;
     background: rgba(253, 119, 0, 0.1);
     border: 2px solid var(--accent-color);
@@ -4596,6 +4596,9 @@ canvas {
     font-size: 1.1rem;
     cursor: pointer;
     transition: all 0.3s;
+    right: 35px;
+    position: absolute;
+    top: 185px;
 }
 
 .matchup-card .btn-vote:hover {
