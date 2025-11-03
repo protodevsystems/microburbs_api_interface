@@ -3146,9 +3146,10 @@ function createParticle(emoji, sourceElement) {
 
 // Keyboard Shortcuts for Swipe
 document.addEventListener('keydown', (e) => {
-    // Only work if playground tab is active
+    // Only work if playground tab is active AND tinder panel is active
     const playgroundTab = document.getElementById('playground-tab');
-    if (!playgroundTab.classList.contains('active')) return;
+    const tinderPanel = document.getElementById('tinder-panel');
+    if (!playgroundTab.classList.contains('active') || !tinderPanel.classList.contains('active')) return;
     
     if (e.key === 'ArrowLeft') {
         swipeLeft();
@@ -3158,3 +3159,427 @@ document.addEventListener('keydown', (e) => {
         undoSwipe();
     }
 });
+
+// ===========================
+// PLAYGROUND SUB-TAB SWITCHING
+// ===========================
+
+function switchPlaygroundFeature(featureName) {
+    console.log('Switching to playground feature:', featureName);
+    
+    // Update sub-tab buttons
+    document.querySelectorAll('.playground-subtab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.playground-subtab-btn').classList.add('active');
+    
+    // Update sub-panels
+    document.querySelectorAll('.playground-subpanel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`${featureName}-panel`).classList.add('active');
+    
+    // Initialize the feature if needed
+    if (featureName === 'tinder' && currentProperties.length > 0 && swipeStack.length === 0) {
+        generatePlayground();
+    } else if (featureName === 'timeline' && currentProperties.length > 0) {
+        generateTimeline();
+    }
+}
+
+// ===========================
+// TIMELINE VIEW
+// ===========================
+
+// Timeline global state
+let timelineChart = null;
+let timelineData = [];
+let timelineDateRange = { min: null, max: null };
+let timelineSliderValue = 100;
+let timelineAnimationInterval = null;
+
+// Generate Timeline
+function generateTimeline() {
+    console.log('Generating Timeline with', currentProperties.length, 'properties');
+    
+    if (!currentProperties || currentProperties.length === 0) {
+        return; // Keep placeholder visible
+    }
+    
+    // Prepare timeline data
+    timelineData = currentProperties.map(prop => ({
+        property: prop,
+        listingDate: new Date(prop.listing_date),
+        daysOnMarket: Math.floor((new Date() - new Date(prop.listing_date)) / (1000 * 60 * 60 * 24))
+    })).sort((a, b) => a.listingDate - b.listingDate);
+    
+    // Calculate date range
+    timelineDateRange.min = timelineData[0].listingDate;
+    timelineDateRange.max = timelineData[timelineData.length - 1].listingDate;
+    
+    // Update stats
+    updateTimelineStats();
+    
+    // Create chart
+    createTimelineChart();
+    
+    // Setup slider
+    setupTimelineSlider();
+    
+    // Show all properties initially
+    renderTimelineProperties(timelineData);
+}
+
+// Update Timeline Stats
+function updateTimelineStats() {
+    const earliestDate = timelineDateRange.min.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' });
+    const latestDate = timelineDateRange.max.toLocaleDateString('en-AU', { month: 'short', day: 'numeric', year: 'numeric' });
+    
+    const avgDays = Math.round(timelineData.reduce((sum, item) => sum + item.daysOnMarket, 0) / timelineData.length);
+    
+    document.getElementById('timelineEarliestDate').textContent = earliestDate;
+    document.getElementById('timelineLatestDate').textContent = latestDate;
+    document.getElementById('timelineAvgDays').textContent = `${avgDays} days`;
+    document.getElementById('timelineActiveCount').textContent = timelineData.length;
+}
+
+// Create Timeline Chart
+function createTimelineChart() {
+    const ctx = document.getElementById('timelineChart').getContext('2d');
+    
+    // Destroy existing chart
+    if (timelineChart) {
+        timelineChart.destroy();
+    }
+    
+    // Group by month
+    const monthlyData = {};
+    timelineData.forEach(item => {
+        const monthKey = `${item.listingDate.getFullYear()}-${String(item.listingDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = { count: 0, totalPrice: 0 };
+        }
+        monthlyData[monthKey].count++;
+        monthlyData[monthKey].totalPrice += item.property.price || 0;
+    });
+    
+    const labels = Object.keys(monthlyData).map(key => {
+        const [year, month] = key.split('-');
+        return new Date(year, month - 1).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    });
+    
+    const counts = Object.values(monthlyData).map(d => d.count);
+    const avgPrices = Object.values(monthlyData).map(d => d.totalPrice / d.count);
+    
+    timelineChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Number of Listings',
+                    data: counts,
+                    borderColor: '#fd7700',
+                    backgroundColor: 'rgba(253, 119, 0, 0.1)',
+                    yAxisID: 'y',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Average Price',
+                    data: avgPrices,
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    yAxisID: 'y1',
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#e5e5e5'
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || '';
+                            if (label) {
+                                label += ': ';
+                            }
+                            if (context.datasetIndex === 1) {
+                                label += '$' + formatNumber(context.parsed.y);
+                            } else {
+                                label += context.parsed.y + ' listings';
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#999'
+                    }
+                },
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    ticks: {
+                        color: '#999'
+                    },
+                    title: {
+                        display: true,
+                        text: 'Number of Listings',
+                        color: '#fd7700'
+                    }
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    grid: {
+                        drawOnChartArea: false
+                    },
+                    ticks: {
+                        color: '#999',
+                        callback: function(value) {
+                            return '$' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Average Price',
+                        color: '#10b981'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Setup Timeline Slider
+function setupTimelineSlider() {
+    const slider = document.getElementById('timelineSlider');
+    const startLabel = document.getElementById('timelineStartLabel');
+    const endLabel = document.getElementById('timelineEndLabel');
+    
+    startLabel.textContent = timelineDateRange.min.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    endLabel.textContent = timelineDateRange.max.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    
+    slider.value = 100;
+    updateTimelineBySlider(100);
+    
+    slider.addEventListener('input', (e) => {
+        timelineSliderValue = parseInt(e.target.value);
+        updateTimelineBySlider(timelineSliderValue);
+    });
+}
+
+// Update Timeline By Slider
+function updateTimelineBySlider(percentage) {
+    const totalDays = (timelineDateRange.max - timelineDateRange.min) / (1000 * 60 * 60 * 24);
+    const daysFromStart = (totalDays * percentage) / 100;
+    const currentDate = new Date(timelineDateRange.min.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
+    
+    // Update current date display
+    document.getElementById('timelineCurrentDate').textContent = currentDate.toLocaleDateString('en-AU', { 
+        month: 'short', 
+        day: 'numeric', 
+        year: 'numeric' 
+    });
+    
+    // Filter properties up to current date
+    const filteredData = timelineData.filter(item => item.listingDate <= currentDate);
+    
+    // Update active count
+    document.getElementById('timelineActiveCount').textContent = filteredData.length;
+    
+    // Render filtered properties
+    renderTimelineProperties(filteredData);
+}
+
+// Render Timeline Properties
+function renderTimelineProperties(dataToShow) {
+    const grid = document.getElementById('timelinePropertiesGrid');
+    
+    if (dataToShow.length === 0) {
+        grid.innerHTML = `
+            <div class="timeline-placeholder">
+                <i class="fas fa-calendar-times"></i>
+                <p>No properties listed before this date</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    dataToShow.forEach(item => {
+        const prop = item.property;
+        const price = prop.price ? `$${formatNumber(prop.price)}` : 'POA';
+        const address = prop.address?.street || 'Address not available';
+        const suburb = prop.address?.sal || '';
+        const state = prop.address?.state || '';
+        const fullAddress = `${address}, ${suburb}, ${state}`;
+        
+        const bedrooms = prop.attributes?.bedrooms || 'N/A';
+        const bathrooms = prop.attributes?.bathrooms || 'N/A';
+        const garages = prop.attributes?.garage_spaces || 'N/A';
+        
+        const listingDate = item.listingDate.toLocaleDateString('en-AU', { 
+            month: 'short', 
+            day: 'numeric', 
+            year: 'numeric' 
+        });
+        
+        const daysAgo = item.daysOnMarket === 0 ? 'Today' : `${item.daysOnMarket} days ago`;
+        
+        html += `
+            <div class="timeline-property-card">
+                <div class="timeline-property-image">
+                    <i class="fas fa-home"></i>
+                    <div class="timeline-property-badge">${daysAgo}</div>
+                </div>
+                <div class="timeline-property-content">
+                    <div class="timeline-property-price">${price}</div>
+                    <div class="timeline-property-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${fullAddress}
+                    </div>
+                    <div class="timeline-property-details">
+                        ${bedrooms !== 'N/A' ? `
+                            <div class="timeline-property-detail">
+                                <i class="fas fa-bed"></i>
+                                ${bedrooms}
+                            </div>
+                        ` : ''}
+                        ${bathrooms !== 'N/A' ? `
+                            <div class="timeline-property-detail">
+                                <i class="fas fa-bath"></i>
+                                ${bathrooms}
+                            </div>
+                        ` : ''}
+                        ${garages !== 'N/A' ? `
+                            <div class="timeline-property-detail">
+                                <i class="fas fa-car"></i>
+                                ${garages}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="timeline-property-date">
+                        <i class="fas fa-calendar-alt"></i>
+                        Listed: ${listingDate}
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    grid.innerHTML = html;
+}
+
+// Sort Timeline Properties
+function sortTimelineProperties() {
+    const sortValue = document.getElementById('timelineSortSelect').value;
+    let sortedData = [...timelineData];
+    
+    const currentPercentage = timelineSliderValue;
+    const totalDays = (timelineDateRange.max - timelineDateRange.min) / (1000 * 60 * 60 * 24);
+    const daysFromStart = (totalDays * currentPercentage) / 100;
+    const currentDate = new Date(timelineDateRange.min.getTime() + daysFromStart * 24 * 60 * 60 * 1000);
+    
+    sortedData = sortedData.filter(item => item.listingDate <= currentDate);
+    
+    switch (sortValue) {
+        case 'date-new':
+            sortedData.sort((a, b) => b.listingDate - a.listingDate);
+            break;
+        case 'date-old':
+            sortedData.sort((a, b) => a.listingDate - b.listingDate);
+            break;
+        case 'price-high':
+            sortedData.sort((a, b) => (b.property.price || 0) - (a.property.price || 0));
+            break;
+        case 'price-low':
+            sortedData.sort((a, b) => (a.property.price || 0) - (b.property.price || 0));
+            break;
+    }
+    
+    renderTimelineProperties(sortedData);
+}
+
+// Play Timeline Animation
+function playTimeline() {
+    const playBtn = document.getElementById('playTimelineBtn');
+    const slider = document.getElementById('timelineSlider');
+    
+    if (timelineAnimationInterval) {
+        // Stop animation
+        clearInterval(timelineAnimationInterval);
+        timelineAnimationInterval = null;
+        playBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+        return;
+    }
+    
+    // Start animation
+    playBtn.innerHTML = '<i class="fas fa-pause"></i> Pause';
+    let currentValue = parseInt(slider.value);
+    
+    if (currentValue >= 100) {
+        currentValue = 0;
+    }
+    
+    timelineAnimationInterval = setInterval(() => {
+        currentValue += 1;
+        
+        if (currentValue > 100) {
+            clearInterval(timelineAnimationInterval);
+            timelineAnimationInterval = null;
+            playBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+            return;
+        }
+        
+        slider.value = currentValue;
+        timelineSliderValue = currentValue;
+        updateTimelineBySlider(currentValue);
+    }, 100); // Update every 100ms
+}
+
+// Reset Timeline
+function resetTimeline() {
+    const slider = document.getElementById('timelineSlider');
+    const playBtn = document.getElementById('playTimelineBtn');
+    
+    // Stop animation if playing
+    if (timelineAnimationInterval) {
+        clearInterval(timelineAnimationInterval);
+        timelineAnimationInterval = null;
+        playBtn.innerHTML = '<i class="fas fa-play"></i> Play';
+    }
+    
+    // Reset to end
+    slider.value = 100;
+    timelineSliderValue = 100;
+    updateTimelineBySlider(100);
+    
+    // Reset sort
+    document.getElementById('timelineSortSelect').value = 'date-new';
+}

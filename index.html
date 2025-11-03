@@ -409,9 +409,34 @@
                 </div>
                 <!-- End Map View Tab -->
 
-                <!-- Playground Tab (Property Tinder) -->
+                <!-- Playground Tab -->
                 <div id="playground-tab" class="tab-panel">
                     <div class="playground-container">
+                        
+                        <!-- Sub-Tab Navigation -->
+                        <div class="playground-subtabs">
+                            <button class="playground-subtab-btn active" onclick="switchPlaygroundFeature('tinder')">
+                                <i class="fas fa-heart"></i>
+                                Property Tinder
+                            </button>
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('timeline')">
+                                <i class="fas fa-chart-line"></i>
+                                Timeline View
+                            </button>
+                            <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
+                                <i class="fas fa-calculator"></i>
+                                Calculator
+                                <span style="font-size: 0.7em; opacity: 0.7;"> (Coming Soon)</span>
+                            </button>
+                            <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
+                                <i class="fas fa-folder"></i>
+                                Portfolio
+                                <span style="font-size: 0.7em; opacity: 0.7;"> (Coming Soon)</span>
+                            </button>
+                        </div>
+
+                        <!-- Property Tinder Sub-Panel -->
+                        <div id="tinder-panel" class="playground-subpanel active">
                         
                         <!-- Header Section -->
                         <div class="playground-header">
@@ -493,6 +518,103 @@
                                 <!-- Dynamic preference insights will be inserted here -->
                             </div>
                         </div>
+
+                        </div>
+                        <!-- End Property Tinder Sub-Panel -->
+
+                        <!-- Timeline View Sub-Panel -->
+                        <div id="timeline-panel" class="playground-subpanel">
+                            
+                            <!-- Timeline Header -->
+                            <div class="timeline-header">
+                                <div class="timeline-title">
+                                    <h2><i class="fas fa-chart-line"></i> Property Timeline</h2>
+                                    <p class="timeline-subtitle">Visualize listing history and market activity over time</p>
+                                </div>
+                                <div class="timeline-controls">
+                                    <button class="timeline-control-btn" onclick="playTimeline()" id="playTimelineBtn">
+                                        <i class="fas fa-play"></i> Play
+                                    </button>
+                                    <button class="timeline-control-btn" onclick="resetTimeline()">
+                                        <i class="fas fa-redo"></i> Reset
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Stats -->
+                            <div class="timeline-stats">
+                                <div class="timeline-stat-card">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    <div class="timeline-stat-content">
+                                        <div class="timeline-stat-value" id="timelineEarliestDate">-</div>
+                                        <div class="timeline-stat-label">Earliest Listing</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-stat-card">
+                                    <i class="fas fa-calendar-check"></i>
+                                    <div class="timeline-stat-content">
+                                        <div class="timeline-stat-value" id="timelineLatestDate">-</div>
+                                        <div class="timeline-stat-label">Latest Listing</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-stat-card">
+                                    <i class="fas fa-clock"></i>
+                                    <div class="timeline-stat-content">
+                                        <div class="timeline-stat-value" id="timelineAvgDays">-</div>
+                                        <div class="timeline-stat-label">Avg Days on Market</div>
+                                    </div>
+                                </div>
+                                <div class="timeline-stat-card">
+                                    <i class="fas fa-home"></i>
+                                    <div class="timeline-stat-content">
+                                        <div class="timeline-stat-value" id="timelineActiveCount">0</div>
+                                        <div class="timeline-stat-label">Currently Showing</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Visualization -->
+                            <div class="timeline-visualization">
+                                <canvas id="timelineChart" style="width: 100%; height: 400px;"></canvas>
+                            </div>
+
+                            <!-- Timeline Slider -->
+                            <div class="timeline-slider-container">
+                                <div class="timeline-slider-label">
+                                    <span>Scrub through time</span>
+                                    <span id="timelineCurrentDate" class="timeline-current-date">-</span>
+                                </div>
+                                <input type="range" id="timelineSlider" class="timeline-slider" min="0" max="100" value="100" />
+                                <div class="timeline-slider-markers">
+                                    <span id="timelineStartLabel">-</span>
+                                    <span id="timelineEndLabel">-</span>
+                                </div>
+                            </div>
+
+                            <!-- Timeline Properties Grid -->
+                            <div class="timeline-properties-section">
+                                <div class="timeline-properties-header">
+                                    <h3>Properties in Current View</h3>
+                                    <div class="timeline-sort">
+                                        <label>Sort by:</label>
+                                        <select id="timelineSortSelect" onchange="sortTimelineProperties()">
+                                            <option value="date-new">Newest First</option>
+                                            <option value="date-old">Oldest First</option>
+                                            <option value="price-high">Price: High to Low</option>
+                                            <option value="price-low">Price: Low to High</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="timeline-properties-grid" id="timelinePropertiesGrid">
+                                    <div class="timeline-placeholder">
+                                        <i class="fas fa-search"></i>
+                                        <p>Search for properties to see the timeline</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Timeline View Sub-Panel -->
 
                     </div>
                 </div>
