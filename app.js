@@ -3184,6 +3184,8 @@ function switchPlaygroundFeature(featureName) {
         generatePlayground();
     } else if (featureName === 'timeline' && currentProperties.length > 0) {
         generateTimeline();
+    } else if (featureName === 'calculator') {
+        generateCalculator();
     }
 }
 
@@ -3617,4 +3619,658 @@ function resetTimeline() {
     
     // Reset sort
     document.getElementById('timelineSortSelect').value = 'date-new';
+}
+
+// ===========================
+// INVESTMENT CALCULATOR
+// ===========================
+
+// Global Calculator State
+let mortgageChart = null;
+let roiChart = null;
+let cashflowChart = null;
+
+// Switch Calculator Mode (tabs within calculator)
+function switchCalculatorMode(mode) {
+    console.log(`Switching to calculator mode: ${mode}`);
+    
+    // Update tab buttons
+    document.querySelectorAll('.calculator-tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.calculator-tab-btn').classList.add('active');
+    
+    // Show selected mode
+    document.querySelectorAll('.calculator-mode').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`${mode}-mode`).classList.add('active');
+    
+    // Trigger initial calculation for the mode
+    if (mode === 'mortgage') {
+        calculateMortgage();
+    } else if (mode === 'roi') {
+        calculateROI();
+    } else if (mode === 'cashflow') {
+        calculateCashFlow();
+    } else if (mode === 'affordability') {
+        calculateAffordability();
+    }
+}
+
+// Generate Calculator (called when switching to calculator sub-tab)
+function generateCalculator() {
+    console.log('Generating calculator');
+    
+    // Populate property dropdown with fetched properties
+    const select = document.getElementById('calculatorPropertySelect');
+    select.innerHTML = '<option value="">-- Choose a property --</option>';
+    
+    if (lastFetchedData && lastFetchedData.results) {
+        lastFetchedData.results.forEach((result, index) => {
+            if (result.property && result.property.price) {
+                const address = result.property.address?.street || result.area_name || `Property ${index + 1}`;
+                const price = formatCurrency(result.property.price);
+                const option = document.createElement('option');
+                option.value = index;
+                option.textContent = `${address} - ${price}`;
+                select.appendChild(option);
+            }
+        });
+    }
+    
+    // Calculate default values
+    calculateMortgage();
+}
+
+// Load Property to Calculator
+function loadPropertyToCalculator() {
+    const select = document.getElementById('calculatorPropertySelect');
+    const index = parseInt(select.value);
+    
+    if (isNaN(index) || !lastFetchedData || !lastFetchedData.results[index]) {
+        return;
+    }
+    
+    const property = lastFetchedData.results[index].property;
+    const price = property.price || 1000000;
+    
+    // Update all calculator inputs with property price
+    document.getElementById('mortgagePrice').value = price;
+    document.getElementById('roiPrice').value = price;
+    document.getElementById('targetPrice').value = price;
+    
+    // Recalculate active mode
+    const activeMode = document.querySelector('.calculator-mode.active');
+    if (activeMode) {
+        const modeId = activeMode.id.replace('-mode', '');
+        if (modeId === 'mortgage') calculateMortgage();
+        else if (modeId === 'roi') calculateROI();
+        else if (modeId === 'cashflow') calculateCashFlow();
+        else if (modeId === 'affordability') calculateAffordability();
+    }
+}
+
+// Enable Custom Property Entry
+function enableCustomProperty() {
+    const select = document.getElementById('calculatorPropertySelect');
+    select.value = '';
+    alert('You can now enter custom values in the input fields below.');
+}
+
+// ===========================
+// MORTGAGE CALCULATOR
+// ===========================
+
+function updateDepositDisplay() {
+    const price = parseFloat(document.getElementById('mortgagePrice').value) || 0;
+    const depositPercent = parseFloat(document.getElementById('mortgageDeposit').value);
+    const depositAmount = (price * depositPercent) / 100;
+    
+    document.getElementById('depositPercentDisplay').textContent = `${depositPercent}%`;
+    document.getElementById('depositAmountDisplay').textContent = formatCurrency(depositAmount);
+}
+
+function updateRateDisplay() {
+    const rate = parseFloat(document.getElementById('mortgageRate').value);
+    document.getElementById('rateDisplay').textContent = `${rate.toFixed(1)}%`;
+}
+
+function updateTermDisplay() {
+    const term = parseInt(document.getElementById('mortgageTerm').value);
+    document.getElementById('termDisplay').textContent = `${term} years`;
+}
+
+function calculateMortgage() {
+    console.log('Calculating mortgage...');
+    
+    // Get inputs
+    const price = parseFloat(document.getElementById('mortgagePrice').value) || 0;
+    const depositPercent = parseFloat(document.getElementById('mortgageDeposit').value);
+    const ratePercent = parseFloat(document.getElementById('mortgageRate').value);
+    const termYears = parseInt(document.getElementById('mortgageTerm').value);
+    
+    // Update displays
+    updateDepositDisplay();
+    updateRateDisplay();
+    updateTermDisplay();
+    
+    // Calculate loan details
+    const depositAmount = (price * depositPercent) / 100;
+    const loanAmount = price - depositAmount;
+    const monthlyRate = (ratePercent / 100) / 12;
+    const numPayments = termYears * 12;
+    
+    // Calculate monthly payment using mortgage formula
+    // M = P [ i(1 + i)^n ] / [ (1 + i)^n - 1 ]
+    let monthlyPayment = 0;
+    if (monthlyRate > 0) {
+        monthlyPayment = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+                        (Math.pow(1 + monthlyRate, numPayments) - 1);
+    } else {
+        monthlyPayment = loanAmount / numPayments;
+    }
+    
+    const totalRepayment = monthlyPayment * numPayments;
+    const totalInterest = totalRepayment - loanAmount;
+    
+    // Update result displays
+    document.getElementById('monthlyPayment').textContent = formatCurrency(monthlyPayment);
+    document.getElementById('loanAmount').textContent = formatCurrency(loanAmount);
+    document.getElementById('totalInterest').textContent = formatCurrency(totalInterest);
+    document.getElementById('totalRepayment').textContent = formatCurrency(totalRepayment);
+    
+    // Create/update mortgage chart
+    createMortgageChart(loanAmount, totalInterest, depositAmount);
+}
+
+function createMortgageChart(principal, interest, deposit) {
+    const canvas = document.getElementById('mortgageChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart
+    if (mortgageChart) {
+        mortgageChart.destroy();
+    }
+    
+    // Create doughnut chart
+    mortgageChart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Principal', 'Interest', 'Deposit'],
+            datasets: [{
+                data: [principal, interest, deposit],
+                backgroundColor: [
+                    'rgba(253, 119, 0, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(16, 185, 129, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(253, 119, 0, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(16, 185, 129, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#ffffff',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Loan Composition',
+                    color: '#ffffff',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===========================
+// ROI CALCULATOR
+// ===========================
+
+function updateAppreciationDisplay() {
+    const rate = parseFloat(document.getElementById('roiAppreciation').value);
+    document.getElementById('appreciationDisplay').textContent = `${rate.toFixed(1)}%`;
+}
+
+function updateYieldDisplay() {
+    const rate = parseFloat(document.getElementById('roiYield').value);
+    document.getElementById('yieldDisplay').textContent = `${rate.toFixed(1)}%`;
+}
+
+function updateTimeframeDisplay() {
+    const years = parseInt(document.getElementById('roiTimeframe').value);
+    document.getElementById('timeframeDisplay').textContent = `${years} years`;
+}
+
+function calculateROI() {
+    console.log('Calculating ROI...');
+    
+    // Get inputs
+    const purchasePrice = parseFloat(document.getElementById('roiPrice').value) || 0;
+    const appreciationRate = parseFloat(document.getElementById('roiAppreciation').value) / 100;
+    const rentalYield = parseFloat(document.getElementById('roiYield').value) / 100;
+    const timeframe = parseInt(document.getElementById('roiTimeframe').value);
+    
+    // Update displays
+    updateAppreciationDisplay();
+    updateYieldDisplay();
+    updateTimeframeDisplay();
+    
+    // Calculate three scenarios
+    const scenarios = [
+        { name: 'optimistic', multiplier: 1.3, element: 'roiOptimistic', percentElement: 'roiOptimisticPercent' },
+        { name: 'realistic', multiplier: 1.0, element: 'roiRealistic', percentElement: 'roiRealisticPercent' },
+        { name: 'conservative', multiplier: 0.7, element: 'roiConservative', percentElement: 'roiConservativePercent' }
+    ];
+    
+    const scenarioData = [];
+    
+    scenarios.forEach(scenario => {
+        const adjustedAppreciation = appreciationRate * scenario.multiplier;
+        const adjustedYield = rentalYield * scenario.multiplier;
+        
+        // Calculate future value with compound appreciation
+        const futureValue = purchasePrice * Math.pow(1 + adjustedAppreciation, timeframe);
+        
+        // Calculate total rental income (simple)
+        const annualRent = purchasePrice * adjustedYield;
+        const totalRentalIncome = annualRent * timeframe;
+        
+        // Total return
+        const capitalGain = futureValue - purchasePrice;
+        const totalReturn = capitalGain + totalRentalIncome;
+        const roiPercent = ((totalReturn / purchasePrice) * 100).toFixed(1);
+        
+        // Update displays
+        document.getElementById(scenario.element).textContent = formatCurrency(totalReturn);
+        document.getElementById(scenario.percentElement).textContent = `+${roiPercent}%`;
+        
+        scenarioData.push({
+            name: scenario.name,
+            futureValue,
+            totalRentalIncome,
+            totalReturn
+        });
+    });
+    
+    // Create/update ROI chart
+    createROIChart(scenarioData, timeframe, purchasePrice);
+}
+
+function createROIChart(scenarios, timeframe, purchasePrice) {
+    const canvas = document.getElementById('roiChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart
+    if (roiChart) {
+        roiChart.destroy();
+    }
+    
+    // Generate year labels
+    const labels = [];
+    for (let i = 0; i <= timeframe; i++) {
+        labels.push(`Year ${i}`);
+    }
+    
+    // Generate datasets for each scenario
+    const datasets = [];
+    const colors = [
+        { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgba(16, 185, 129, 1)' },
+        { bg: 'rgba(253, 119, 0, 0.2)', border: 'rgba(253, 119, 0, 1)' },
+        { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 1)' }
+    ];
+    
+    scenarios.forEach((scenario, index) => {
+        const data = [purchasePrice];
+        const growthRate = Math.pow(scenario.futureValue / purchasePrice, 1 / timeframe);
+        
+        for (let i = 1; i <= timeframe; i++) {
+            data.push(purchasePrice * Math.pow(growthRate, i));
+        }
+        
+        datasets.push({
+            label: scenario.name.charAt(0).toUpperCase() + scenario.name.slice(1),
+            data: data,
+            backgroundColor: colors[index].bg,
+            borderColor: colors[index].border,
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        });
+    });
+    
+    // Create line chart
+    roiChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: '#ffffff',
+                        padding: 15,
+                        font: {
+                            size: 12
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Property Value Projection',
+                    color: '#ffffff',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: false,
+                    ticks: {
+                        color: '#999999',
+                        callback: function(value) {
+                            return '$' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#999999'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===========================
+// CASH FLOW CALCULATOR
+// ===========================
+
+function updateManagementDisplay() {
+    const percent = parseFloat(document.getElementById('managementFee').value);
+    document.getElementById('managementDisplay').textContent = `${percent.toFixed(1)}%`;
+}
+
+function calculateCashFlow() {
+    console.log('Calculating cash flow...');
+    
+    // Get inputs
+    const weeklyRent = parseFloat(document.getElementById('weeklyRent').value) || 0;
+    const mortgagePayment = parseFloat(document.getElementById('mortgagePayment').value) || 0;
+    const councilRates = parseFloat(document.getElementById('councilRates').value) || 0;
+    const strataFees = parseFloat(document.getElementById('strataFees').value) || 0;
+    const insurance = parseFloat(document.getElementById('insurance').value) || 0;
+    const maintenance = parseFloat(document.getElementById('maintenance').value) || 0;
+    const managementPercent = parseFloat(document.getElementById('managementFee').value) / 100;
+    
+    // Update displays
+    updateManagementDisplay();
+    
+    // Calculate annual figures
+    const annualRent = weeklyRent * 52;
+    const managementFees = annualRent * managementPercent;
+    const annualMortgage = mortgagePayment * 12;
+    const annualStrata = strataFees * 4; // quarterly
+    
+    const annualIncome = annualRent;
+    const annualExpenses = annualMortgage + councilRates + annualStrata + insurance + maintenance + managementFees;
+    const annualCashFlow = annualIncome - annualExpenses;
+    const weeklyCashFlow = annualCashFlow / 52;
+    
+    // Update displays
+    document.getElementById('annualIncome').textContent = formatCurrency(annualIncome);
+    document.getElementById('annualExpenses').textContent = formatCurrency(annualExpenses);
+    document.getElementById('annualCashFlow').textContent = formatCurrency(annualCashFlow);
+    document.getElementById('weeklyCashFlow').textContent = formatCurrency(weeklyCashFlow);
+    
+    // Update status indicator
+    const statusEl = document.getElementById('cashflowStatus');
+    statusEl.classList.remove('positive', 'negative');
+    
+    if (annualCashFlow > 0) {
+        statusEl.classList.add('positive');
+        statusEl.innerHTML = '<i class="fas fa-check-circle"></i><span>✅ Cashflow Positive! This property generates income after all expenses.</span>';
+    } else if (annualCashFlow < 0) {
+        statusEl.classList.add('negative');
+        statusEl.innerHTML = '<i class="fas fa-exclamation-triangle"></i><span>⚠️ Cashflow Negative. You\'ll need to cover ' + formatCurrency(Math.abs(weeklyCashFlow)) + '/week.</span>';
+    } else {
+        statusEl.innerHTML = '<i class="fas fa-equals"></i><span>Breakeven. Income exactly covers expenses.</span>';
+    }
+    
+    // Create/update cash flow chart
+    createCashFlowChart(annualIncome, annualMortgage, councilRates, annualStrata, insurance, maintenance, managementFees);
+}
+
+function createCashFlowChart(income, mortgage, council, strata, insurance, maintenance, management) {
+    const canvas = document.getElementById('cashflowChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart
+    if (cashflowChart) {
+        cashflowChart.destroy();
+    }
+    
+    // Create bar chart
+    cashflowChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Income', 'Mortgage', 'Council', 'Strata', 'Insurance', 'Maintenance', 'Management'],
+            datasets: [{
+                label: 'Annual Amount',
+                data: [income, -mortgage, -council, -strata, -insurance, -maintenance, -management],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(239, 68, 68, 0.8)',
+                    'rgba(239, 68, 68, 0.8)'
+                ],
+                borderColor: [
+                    'rgba(16, 185, 129, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(239, 68, 68, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Income vs Expenses Breakdown',
+                    color: '#ffffff',
+                    font: {
+                        size: 16,
+                        weight: 'bold'
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    ticks: {
+                        color: '#999999',
+                        callback: function(value) {
+                            return '$' + (Math.abs(value) / 1000).toFixed(0) + 'k';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#999999'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// ===========================
+// AFFORDABILITY CALCULATOR
+// ===========================
+
+function calculateAffordability() {
+    console.log('Calculating affordability...');
+    
+    // Get inputs
+    const householdIncome = parseFloat(document.getElementById('householdIncome').value) || 0;
+    const availableDeposit = parseFloat(document.getElementById('availableDeposit').value) || 0;
+    const monthlyExpenses = parseFloat(document.getElementById('monthlyExpenses').value) || 0;
+    const monthlyDebts = parseFloat(document.getElementById('monthlyDebts').value) || 0;
+    const targetPrice = parseFloat(document.getElementById('targetPrice').value) || 0;
+    
+    // Calculate borrowing capacity (simplified lending criteria)
+    // Typically banks lend 5-6x annual income, minus debts
+    const annualRepaymentCapacity = householdIncome * 0.3; // 30% of income
+    const monthlyRepaymentCapacity = annualRepaymentCapacity / 12;
+    const availableForLoan = monthlyRepaymentCapacity - monthlyDebts - monthlyExpenses * 0.5;
+    
+    // Calculate max loan using 6.5% rate, 30 years
+    const monthlyRate = 0.065 / 12;
+    const numPayments = 30 * 12;
+    const maxBorrowing = availableForLoan * (Math.pow(1 + monthlyRate, numPayments) - 1) / 
+                        (monthlyRate * Math.pow(1 + monthlyRate, numPayments));
+    
+    const maxPropertyPrice = maxBorrowing + availableDeposit;
+    const requiredLoan = targetPrice - availableDeposit;
+    const monthlyCommitment = requiredLoan > 0 ? 
+        requiredLoan * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / 
+        (Math.pow(1 + monthlyRate, numPayments) - 1) : 0;
+    
+    const debtToIncome = ((monthlyCommitment + monthlyDebts) * 12 / householdIncome * 100);
+    
+    // Update displays
+    document.getElementById('maxBorrowing').textContent = formatCurrency(Math.max(0, maxBorrowing));
+    document.getElementById('maxProperty').textContent = formatCurrency(Math.max(0, maxPropertyPrice));
+    document.getElementById('monthlyCommitment').textContent = formatCurrency(monthlyCommitment);
+    document.getElementById('debtToIncome').textContent = debtToIncome.toFixed(1) + '%';
+    
+    // Determine verdict
+    const verdictEl = document.getElementById('affordabilityVerdict');
+    verdictEl.classList.remove('can-afford', 'cannot-afford', 'marginal');
+    
+    let verdict = '';
+    let tips = [];
+    
+    if (targetPrice <= maxPropertyPrice * 0.8) {
+        verdictEl.classList.add('can-afford');
+        verdict = `
+            <div class="verdict-icon">
+                <i class="fas fa-check-circle"></i>
+            </div>
+            <div class="verdict-text">
+                <h4>✅ You Can Comfortably Afford This!</h4>
+                <p>Based on your income and deposit, this property is well within your reach.</p>
+            </div>
+        `;
+        tips = [
+            'You have a strong financial position for this purchase',
+            'Consider saving extra deposit to avoid LMI (Lenders Mortgage Insurance)',
+            'Shop around for the best interest rate to maximize savings'
+        ];
+    } else if (targetPrice <= maxPropertyPrice) {
+        verdictEl.classList.add('marginal');
+        verdict = `
+            <div class="verdict-icon">
+                <i class="fas fa-exclamation-circle"></i>
+            </div>
+            <div class="verdict-text">
+                <h4>⚠️ Marginal - Proceed with Caution</h4>
+                <p>You can technically afford this, but it will stretch your budget.</p>
+            </div>
+        `;
+        tips = [
+            'This property is at the upper limit of your borrowing capacity',
+            'Consider a slightly cheaper property for more financial comfort',
+            'Ensure you have an emergency fund for unexpected expenses',
+            'Budget carefully for ongoing maintenance and rates'
+        ];
+    } else {
+        verdictEl.classList.add('cannot-afford');
+        const shortfall = targetPrice - maxPropertyPrice;
+        verdict = `
+            <div class="verdict-icon">
+                <i class="fas fa-times-circle"></i>
+            </div>
+            <div class="verdict-text">
+                <h4>❌ Currently Out of Reach</h4>
+                <p>You need an additional ${formatCurrency(shortfall)} to afford this property.</p>
+            </div>
+        `;
+        tips = [
+            `Save an extra ${formatCurrency(shortfall)} for deposit`,
+            'Reduce existing debts to improve borrowing capacity',
+            'Increase household income through additional work or a raise',
+            `Consider properties up to ${formatCurrency(maxPropertyPrice)} instead`,
+            'Look into government grants for first home buyers'
+        ];
+    }
+    
+    verdictEl.innerHTML = verdict;
+    
+    // Update tips
+    const tipsEl = document.getElementById('affordabilityTips');
+    tipsEl.innerHTML = tips.map(tip => `<li>${tip}</li>`).join('');
+}
+
+// Utility function to format currency
+function formatCurrency(amount) {
+    if (isNaN(amount) || amount === null || amount === undefined) {
+        return '$0';
+    }
+    return '$' + Math.round(amount).toLocaleString('en-AU');
 }
