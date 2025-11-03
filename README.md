@@ -523,7 +523,7 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 **AI-powered house orientation detection** - determine which direction properties face using multiple intelligent analysis methods:
 
 **🔍 Detection Methods:**
-1. **Text Mining** (Most Reliable):
+1. **Text Mining** (High Reliability):
    - Scans property descriptions for orientation keywords
    - Detects patterns like "north-facing", "northerly aspect", "faces north"
    - **SMART INVERSION**: Detects "north-facing yard" and correctly determines house faces SOUTH
@@ -531,29 +531,42 @@ After reviewing properties, the system analyzes your swipe patterns and generate
    - Context-aware analysis (distinguishes house vs outdoor area orientation)
    - High confidence when explicit mentions found
 
-2. **Street Pattern Analysis**:
+2. **🤖 AI Vision Analysis** (⚡ PREMIUM - HIGHEST ACCURACY):
+   - **Powered by GPT-4o Vision** - OpenAI's most advanced multimodal AI
+   - Analyzes actual satellite imagery of each property
+   - Identifies visual cues: driveways, entrances, garage doors, roof lines, yard layout
+   - Red marker pinpoints the exact property being analyzed
+   - North-oriented images (top = North, right = East, bottom = South, left = West)
+   - **Detailed reasoning** with specific visual cues listed
+   - **High-to-Very-High confidence** - based on real image analysis
+   - Uses Google Maps Static API for satellite imagery
+   - ~$0.01 per property analysis (OpenAI API cost)
+   - Most accurate method for ambiguous cases ("north-facing pool" scenarios)
+   - Returns visual cues: ["driveway facing east", "garage on south side", etc.]
+
+3. **Street Pattern Analysis**:
    - Analyzes street names for directional indicators
    - Examples: "North Street", "Eastern Avenue", "West Road"
    - Provides contextual clues about area layout
    - Low-to-medium confidence
 
-3. **🆕 Street Bearing Analysis** (NEW - Free API):
+4. **Street Bearing Analysis** (Free API):
    - Uses OpenStreetMap's free Overpass API to get actual street geometry
    - Calculates precise street bearing in degrees (0-360°)
    - Converts bearing to cardinal directions (N/NE/E/SE/S/SW/W/NW)
    - Assumes houses face the street (typical in Australian suburbs)
    - Uses Nominatim reverse geocoding for street identification
-   - **Medium-to-High confidence** - based on real geospatial data
+   - **Medium confidence** - based on real geospatial data
    - Rate-limited to 1 request/second (respects API usage policy)
    - Falls back to grid estimation if API unavailable
 
-4. **Coordinate Analysis**:
+5. **Coordinate Analysis**:
    - Uses latitude/longitude for hemisphere-based heuristics
    - Considers Australian climate patterns (Southern Hemisphere)
    - Statistical inference about preferred orientations
    - Low confidence (last resort)
 
-5. **Suburb Context**:
+6. **Suburb Context**:
    - Considers typical layout patterns in Australian suburbs
    - Identifies coastal, hills, or valley locations
    - Provides contextual reasoning when specific data unavailable

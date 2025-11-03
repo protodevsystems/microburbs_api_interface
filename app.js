@@ -5598,11 +5598,12 @@ async function analyzeAllOrientations() {
 // Main orientation detection function - tries multiple methods
 async function detectPropertyOrientation(property, index) {
     const methods = [
-        detectFromDescription,
-        detectFromStreetName,
-        detectFromStreetBearing, // NEW: Street bearing analysis (async, free, medium confidence)
-        detectFromCoordinates,
-        detectFromSuburbContext
+        detectFromDescription,        // #1: Text mining (high confidence when found)
+        detectFromAIVision,           // #2: 🤖 AI Vision (GPT-4o) - PREMIUM, HIGHEST ACCURACY ⭐
+        detectFromStreetName,          // #3: Street pattern analysis
+        detectFromStreetBearing,       // #4: Street bearing (OSM, free, medium confidence)
+        detectFromCoordinates,         // #5: Coordinate heuristics (low confidence)
+        detectFromSuburbContext        // #6: Suburb context (last resort)
     ];
     
     let bestResult = null;
@@ -5827,7 +5828,65 @@ function detectFromCoordinates(property) {
     return null;
 }
 
-// Method 4: Detect from street bearing using OpenStreetMap (async)
+// Method 4: Detect from AI Vision Analysis (GPT-4o) - PREMIUM & MOST ACCURATE
+async function detectFromAIVision(property) {
+    const coords = property.coordinates;
+    if (!coords || !coords.latitude || !coords.longitude) return null;
+    
+    try {
+        const address = property.address?.street || property.area_name || 'Unknown Address';
+        
+        console.log(`[AI Vision] Analyzing ${address}...`);
+        
+        // Call backend API for AI analysis
+        const response = await fetch('http://localhost:5000/api/analyze-orientation', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                latitude: coords.latitude,
+                longitude: coords.longitude,
+                address: address
+            })
+        });
+        
+        if (!response.ok) {
+            console.log(`[AI Vision] API error: ${response.status}`);
+            return null;
+        }
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            console.log(`[AI Vision] Analysis failed: ${data.error}`);
+            return null;
+        }
+        
+        console.log(`[AI Vision] ✅ Detected ${data.orientation} (${data.confidence} confidence)`);
+        
+        // Format visual cues as bullet points
+        const cuesList = data.visual_cues && data.visual_cues.length > 0 
+            ? data.visual_cues.map(cue => `• ${cue}`).join('\n') 
+            : '';
+        
+        const fullReasoning = `${data.reasoning}${cuesList ? '\n\nVisual Cues:\n' + cuesList : ''}`;
+        
+        return {
+            orientation: data.orientation,
+            confidence: data.confidence,
+            method: '🤖 AI Vision Analysis (GPT-4o)',
+            reasoning: fullReasoning,
+            imageUrl: data.image_url  // For debugging
+        };
+        
+    } catch (error) {
+        console.log('[AI Vision] Error:', error);
+        return null;
+    }
+}
+
+// Method 5: Detect from street bearing using OpenStreetMap (async)
 async function detectFromStreetBearing(property) {
     const coords = property.coordinates;
     if (!coords || !coords.latitude || !coords.longitude) return null;
