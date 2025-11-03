@@ -992,6 +992,11 @@ function switchTab(tabName) {
             }
         }, 100);
     }
+    
+    // If switching to playground, initialize the swipe interface
+    if (tabName === 'playground' && currentProperties.length > 0) {
+        generatePlayground();
+    }
 }
 
 // ==================== TECHNICAL INSIGHTS GENERATION ====================
@@ -2508,3 +2513,647 @@ function clearComparison() {
     comparisonProperties = [];
     renderComparison();
 }
+
+// ===========================
+// PLAYGROUND TAB - PROPERTY TINDER
+// ===========================
+
+// Playground global state
+let swipeStack = [];
+let currentSwipeIndex = 0;
+let likedProperties = [];
+let passedProperties = [];
+let swipeHistory = [];
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let currentCard = null;
+
+// Initialize Playground Tab
+function generatePlayground() {
+    console.log('Generating Playground with', currentProperties.length, 'properties');
+    
+    if (!currentProperties || currentProperties.length === 0) {
+        return; // Keep placeholder visible
+    }
+    
+    // Reset state
+    swipeStack = [...currentProperties];
+    currentSwipeIndex = 0;
+    
+    // Render first batch of cards
+    renderSwipeCards();
+    updateSwipeStats();
+}
+
+// Render Swipe Cards
+function renderSwipeCards() {
+    const swipeStackEl = document.getElementById('swipeStack');
+    
+    if (currentSwipeIndex >= swipeStack.length) {
+        // All cards swiped
+        swipeStackEl.innerHTML = `
+            <div class="swipe-card-placeholder">
+                <i class="fas fa-check-circle"></i>
+                <h3>All done! 🎉</h3>
+                <p>You've reviewed all ${swipeStack.length} properties</p>
+                <button class="btn-secondary" onclick="resetPlayground()" style="margin-top: 2rem; padding: 1rem 2rem;">
+                    <i class="fas fa-redo"></i> Start Over
+                </button>
+            </div>
+        `;
+        
+        // Show preference insights if we have liked properties
+        if (likedProperties.length > 0) {
+            generatePreferenceInsights();
+        }
+        return;
+    }
+    
+    // Clear and render top 3 cards (for stack effect)
+    swipeStackEl.innerHTML = '';
+    
+    const cardsToShow = Math.min(3, swipeStack.length - currentSwipeIndex);
+    
+    for (let i = cardsToShow - 1; i >= 0; i--) {
+        const property = swipeStack[currentSwipeIndex + i];
+        const card = createSwipeCard(property, i);
+        swipeStackEl.appendChild(card);
+    }
+    
+    // Add swipe listeners to top card only
+    const topCard = swipeStackEl.querySelector('.swipe-card');
+    if (topCard) {
+        initSwipeListeners(topCard);
+        currentCard = topCard;
+    }
+}
+
+// Create Swipe Card
+function createSwipeCard(property, stackIndex) {
+    const card = document.createElement('div');
+    card.className = 'swipe-card';
+    card.dataset.propertyIndex = currentSwipeIndex + stackIndex;
+    
+    // Stack effect styling
+    const scale = 1 - (stackIndex * 0.05);
+    const translateY = stackIndex * 10;
+    card.style.transform = `scale(${scale}) translateY(${translateY}px)`;
+    card.style.zIndex = 100 - stackIndex;
+    
+    const price = property.price ? `$${formatNumber(property.price)}` : 'Price on Application';
+    const address = property.address?.street || 'Address not available';
+    const suburb = property.address?.sal || '';
+    const state = property.address?.state || '';
+    const fullAddress = `${address}, ${suburb}, ${state}`;
+    
+    const bedrooms = property.attributes?.bedrooms || 'N/A';
+    const bathrooms = property.attributes?.bathrooms || 'N/A';
+    const garages = property.attributes?.garage_spaces || 'N/A';
+    const landSize = property.attributes?.land_size || 'N/A';
+    const propertyType = property.property_type || 'Property';
+    
+    card.innerHTML = `
+        <div class="swipe-card-image">
+            <i class="fas fa-home"></i>
+        </div>
+        <div class="swipe-card-content">
+            <div class="swipe-card-price">${price}</div>
+            <div class="swipe-card-address">
+                <i class="fas fa-map-marker-alt"></i>
+                ${fullAddress}
+            </div>
+            <div class="swipe-card-details">
+                ${bedrooms !== 'N/A' ? `
+                    <div class="swipe-card-detail">
+                        <i class="fas fa-bed"></i>
+                        ${bedrooms}
+                    </div>
+                ` : ''}
+                ${bathrooms !== 'N/A' ? `
+                    <div class="swipe-card-detail">
+                        <i class="fas fa-bath"></i>
+                        ${bathrooms}
+                    </div>
+                ` : ''}
+                ${garages !== 'N/A' ? `
+                    <div class="swipe-card-detail">
+                        <i class="fas fa-car"></i>
+                        ${garages}
+                    </div>
+                ` : ''}
+                ${landSize !== 'N/A' ? `
+                    <div class="swipe-card-detail">
+                        <i class="fas fa-ruler-combined"></i>
+                        ${landSize}
+                    </div>
+                ` : ''}
+            </div>
+            <div class="swipe-card-type">${propertyType}</div>
+        </div>
+    `;
+    
+    return card;
+}
+
+// Initialize Swipe Listeners
+function initSwipeListeners(card) {
+    // Mouse events
+    card.addEventListener('mousedown', onDragStart);
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd);
+    
+    // Touch events
+    card.addEventListener('touchstart', onDragStart);
+    document.addEventListener('touchmove', onDragMove);
+    document.addEventListener('touchend', onDragEnd);
+}
+
+// Drag Start
+function onDragStart(e) {
+    if (e.target.closest('.swipe-card') !== currentCard) return;
+    
+    isDragging = true;
+    currentCard.classList.add('swiping');
+    
+    const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+    
+    startX = clientX;
+    startY = clientY;
+}
+
+// Drag Move
+function onDragMove(e) {
+    if (!isDragging || !currentCard) return;
+    
+    e.preventDefault();
+    
+    const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+    
+    const deltaX = clientX - startX;
+    const deltaY = clientY - startY;
+    
+    const rotation = deltaX * 0.1; // Rotate based on horizontal movement
+    
+    currentCard.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${rotation}deg)`;
+    
+    // Show indicators
+    const leftIndicator = document.getElementById('swipeIndicatorLeft');
+    const rightIndicator = document.getElementById('swipeIndicatorRight');
+    
+    if (Math.abs(deltaX) > 50) {
+        if (deltaX > 0) {
+            rightIndicator.classList.add('active');
+            leftIndicator.classList.remove('active');
+        } else {
+            leftIndicator.classList.add('active');
+            rightIndicator.classList.remove('active');
+        }
+    } else {
+        leftIndicator.classList.remove('active');
+        rightIndicator.classList.remove('active');
+    }
+}
+
+// Drag End
+function onDragEnd(e) {
+    if (!isDragging || !currentCard) return;
+    
+    isDragging = false;
+    currentCard.classList.remove('swiping');
+    
+    const clientX = e.type === 'touchend' ? e.changedTouches[0].clientX : e.clientX;
+    const deltaX = clientX - startX;
+    
+    // Hide indicators
+    document.getElementById('swipeIndicatorLeft').classList.remove('active');
+    document.getElementById('swipeIndicatorRight').classList.remove('active');
+    
+    const threshold = 100;
+    
+    if (Math.abs(deltaX) > threshold) {
+        // Swipe detected
+        if (deltaX > 0) {
+            completeSwipe('right');
+        } else {
+            completeSwipe('left');
+        }
+    } else {
+        // Return to center
+        currentCard.style.transform = '';
+    }
+}
+
+// Complete Swipe
+function completeSwipe(direction) {
+    const property = swipeStack[currentSwipeIndex];
+    
+    if (direction === 'right') {
+        currentCard.classList.add('swiped-right');
+        likedProperties.push(property);
+        createParticle('❤️', currentCard);
+    } else {
+        currentCard.classList.add('swiped-left');
+        passedProperties.push(property);
+        createParticle('✖️', currentCard);
+    }
+    
+    // Add to history
+    swipeHistory.push({
+        property: property,
+        direction: direction,
+        timestamp: Date.now()
+    });
+    
+    // Update UI
+    updateSwipeStats();
+    updateLikedPropertiesPanel();
+    
+    // Move to next card
+    setTimeout(() => {
+        currentSwipeIndex++;
+        renderSwipeCards();
+    }, 500);
+}
+
+// Swipe Left (Button)
+function swipeLeft() {
+    if (!currentCard || currentSwipeIndex >= swipeStack.length) return;
+    
+    currentCard.classList.add('swiped-left');
+    const property = swipeStack[currentSwipeIndex];
+    passedProperties.push(property);
+    
+    swipeHistory.push({
+        property: property,
+        direction: 'left',
+        timestamp: Date.now()
+    });
+    
+    createParticle('✖️', currentCard);
+    updateSwipeStats();
+    
+    setTimeout(() => {
+        currentSwipeIndex++;
+        renderSwipeCards();
+    }, 500);
+}
+
+// Swipe Right (Button)
+function swipeRight() {
+    if (!currentCard || currentSwipeIndex >= swipeStack.length) return;
+    
+    currentCard.classList.add('swiped-right');
+    const property = swipeStack[currentSwipeIndex];
+    likedProperties.push(property);
+    
+    swipeHistory.push({
+        property: property,
+        direction: 'right',
+        timestamp: Date.now()
+    });
+    
+    createParticle('❤️', currentCard);
+    updateSwipeStats();
+    updateLikedPropertiesPanel();
+    
+    setTimeout(() => {
+        currentSwipeIndex++;
+        renderSwipeCards();
+    }, 500);
+}
+
+// Undo Swipe
+function undoSwipe() {
+    if (swipeHistory.length === 0 || currentSwipeIndex === 0) return;
+    
+    const lastSwipe = swipeHistory.pop();
+    
+    // Remove from liked or passed
+    if (lastSwipe.direction === 'right') {
+        likedProperties.pop();
+    } else {
+        passedProperties.pop();
+    }
+    
+    // Go back one card
+    currentSwipeIndex--;
+    
+    updateSwipeStats();
+    updateLikedPropertiesPanel();
+    renderSwipeCards();
+}
+
+// Update Swipe Stats
+function updateSwipeStats() {
+    document.getElementById('likedCount').textContent = likedProperties.length;
+    document.getElementById('passedCount').textContent = passedProperties.length;
+}
+
+// Update Liked Properties Panel
+function updateLikedPropertiesPanel() {
+    const grid = document.getElementById('likedPropertiesGrid');
+    
+    if (likedProperties.length === 0) {
+        grid.innerHTML = `
+            <div class="no-liked-placeholder">
+                <i class="fas fa-heart-broken"></i>
+                <p>No liked properties yet</p>
+                <p class="small-text">Start swiping to build your collection!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    likedProperties.forEach((property, index) => {
+        const price = property.price ? `$${formatNumber(property.price)}` : 'POA';
+        const address = property.address?.street || 'Address not available';
+        const suburb = property.address?.sal || '';
+        const state = property.address?.state || '';
+        const fullAddress = `${address}, ${suburb}, ${state}`;
+        
+        const bedrooms = property.attributes?.bedrooms || 'N/A';
+        const bathrooms = property.attributes?.bathrooms || 'N/A';
+        const garages = property.attributes?.garage_spaces || 'N/A';
+        
+        html += `
+            <div class="liked-property-card">
+                <div class="liked-property-image">
+                    <i class="fas fa-home"></i>
+                </div>
+                <div class="liked-property-content">
+                    <div class="liked-property-price">${price}</div>
+                    <div class="liked-property-address">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${fullAddress}
+                    </div>
+                    <div class="liked-property-details">
+                        ${bedrooms !== 'N/A' ? `
+                            <div class="liked-property-detail">
+                                <i class="fas fa-bed"></i>
+                                ${bedrooms}
+                            </div>
+                        ` : ''}
+                        ${bathrooms !== 'N/A' ? `
+                            <div class="liked-property-detail">
+                                <i class="fas fa-bath"></i>
+                                ${bathrooms}
+                            </div>
+                        ` : ''}
+                        ${garages !== 'N/A' ? `
+                            <div class="liked-property-detail">
+                                <i class="fas fa-car"></i>
+                                ${garages}
+                            </div>
+                        ` : ''}
+                    </div>
+                    <button class="btn-remove-liked" onclick="removeLikedProperty(${index})">
+                        <i class="fas fa-times"></i> Remove
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    grid.innerHTML = html;
+}
+
+// Remove Liked Property
+function removeLikedProperty(index) {
+    likedProperties.splice(index, 1);
+    updateLikedPropertiesPanel();
+    updateSwipeStats();
+    
+    // Update preference insights if visible
+    const insightsEl = document.getElementById('preferenceInsights');
+    if (insightsEl.style.display !== 'none' && likedProperties.length > 0) {
+        generatePreferenceInsights();
+    } else if (likedProperties.length === 0) {
+        insightsEl.style.display = 'none';
+    }
+}
+
+// Toggle Liked Panel
+function toggleLikedPanel() {
+    const panel = document.querySelector('.liked-properties-panel');
+    panel.classList.toggle('collapsed');
+}
+
+// Reset Playground
+function resetPlayground() {
+    swipeStack = [...currentProperties];
+    currentSwipeIndex = 0;
+    likedProperties = [];
+    passedProperties = [];
+    swipeHistory = [];
+    
+    renderSwipeCards();
+    updateSwipeStats();
+    updateLikedPropertiesPanel();
+    
+    document.getElementById('preferenceInsights').style.display = 'none';
+}
+
+// Generate Preference Insights
+function generatePreferenceInsights() {
+    if (likedProperties.length === 0) return;
+    
+    const insightsEl = document.getElementById('preferenceInsights');
+    const insightsGrid = document.getElementById('insightsGrid');
+    
+    insightsEl.style.display = 'block';
+    
+    // Analyze preferences
+    const priceRange = analyzePriceRange();
+    const propertyTypePreference = analyzePropertyTypes();
+    const bedroomPreference = analyzeBedroomPreference();
+    const locationPreference = analyzeLocationPreference();
+    
+    let html = '';
+    
+    // Price Range Insight
+    if (priceRange) {
+        html += `
+            <div class="insight-card">
+                <div class="insight-title">
+                    <i class="fas fa-dollar-sign"></i>
+                    Price Range
+                </div>
+                <div class="insight-value">$${formatNumber(priceRange.avg)}</div>
+                <div class="insight-description">
+                    Average price of liked properties<br>
+                    Range: $${formatNumber(priceRange.min)} - $${formatNumber(priceRange.max)}
+                </div>
+                <div class="insight-bar">
+                    <div class="insight-bar-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Property Type Insight
+    if (propertyTypePreference) {
+        const percentage = ((propertyTypePreference.count / likedProperties.length) * 100).toFixed(0);
+        html += `
+            <div class="insight-card">
+                <div class="insight-title">
+                    <i class="fas fa-home"></i>
+                    Property Type
+                </div>
+                <div class="insight-value">${propertyTypePreference.type}</div>
+                <div class="insight-description">
+                    ${percentage}% of your liked properties
+                </div>
+                <div class="insight-bar">
+                    <div class="insight-bar-fill" style="width: ${percentage}%;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Bedroom Preference
+    if (bedroomPreference) {
+        html += `
+            <div class="insight-card">
+                <div class="insight-title">
+                    <i class="fas fa-bed"></i>
+                    Bedrooms
+                </div>
+                <div class="insight-value">${bedroomPreference.avg}</div>
+                <div class="insight-description">
+                    Average bedrooms in liked properties<br>
+                    Range: ${bedroomPreference.min} - ${bedroomPreference.max}
+                </div>
+                <div class="insight-bar">
+                    <div class="insight-bar-fill" style="width: ${(bedroomPreference.avg / 5) * 100}%;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    // Location Preference
+    if (locationPreference) {
+        const percentage = ((locationPreference.count / likedProperties.length) * 100).toFixed(0);
+        html += `
+            <div class="insight-card">
+                <div class="insight-title">
+                    <i class="fas fa-map-marker-alt"></i>
+                    Location
+                </div>
+                <div class="insight-value">${locationPreference.suburb}</div>
+                <div class="insight-description">
+                    ${percentage}% of your liked properties are in this area
+                </div>
+                <div class="insight-bar">
+                    <div class="insight-bar-fill" style="width: ${percentage}%;"></div>
+                </div>
+            </div>
+        `;
+    }
+    
+    insightsGrid.innerHTML = html;
+}
+
+// Analyze Price Range
+function analyzePriceRange() {
+    const prices = likedProperties
+        .filter(p => p.price)
+        .map(p => p.price);
+    
+    if (prices.length === 0) return null;
+    
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const avg = prices.reduce((a, b) => a + b, 0) / prices.length;
+    
+    return { min, max, avg };
+}
+
+// Analyze Property Types
+function analyzePropertyTypes() {
+    const types = {};
+    
+    likedProperties.forEach(property => {
+        const type = property.property_type || 'Unknown';
+        types[type] = (types[type] || 0) + 1;
+    });
+    
+    const sortedTypes = Object.entries(types).sort((a, b) => b[1] - a[1]);
+    
+    if (sortedTypes.length === 0) return null;
+    
+    return {
+        type: sortedTypes[0][0],
+        count: sortedTypes[0][1]
+    };
+}
+
+// Analyze Bedroom Preference
+function analyzeBedroomPreference() {
+    const bedrooms = likedProperties
+        .filter(p => p.attributes?.bedrooms)
+        .map(p => p.attributes.bedrooms);
+    
+    if (bedrooms.length === 0) return null;
+    
+    const min = Math.min(...bedrooms);
+    const max = Math.max(...bedrooms);
+    const avg = Math.round(bedrooms.reduce((a, b) => a + b, 0) / bedrooms.length);
+    
+    return { min, max, avg };
+}
+
+// Analyze Location Preference
+function analyzeLocationPreference() {
+    const locations = {};
+    
+    likedProperties.forEach(property => {
+        const suburb = property.address?.sal || 'Unknown';
+        locations[suburb] = (locations[suburb] || 0) + 1;
+    });
+    
+    const sortedLocations = Object.entries(locations).sort((a, b) => b[1] - a[1]);
+    
+    if (sortedLocations.length === 0) return null;
+    
+    return {
+        suburb: sortedLocations[0][0],
+        count: sortedLocations[0][1]
+    };
+}
+
+// Create Particle Effect
+function createParticle(emoji, sourceElement) {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.textContent = emoji;
+    
+    const rect = sourceElement.getBoundingClientRect();
+    particle.style.left = `${rect.left + rect.width / 2}px`;
+    particle.style.top = `${rect.top + rect.height / 2}px`;
+    
+    document.body.appendChild(particle);
+    
+    setTimeout(() => {
+        particle.remove();
+    }, 2000);
+}
+
+// Keyboard Shortcuts for Swipe
+document.addEventListener('keydown', (e) => {
+    // Only work if playground tab is active
+    const playgroundTab = document.getElementById('playground-tab');
+    if (!playgroundTab.classList.contains('active')) return;
+    
+    if (e.key === 'ArrowLeft') {
+        swipeLeft();
+    } else if (e.key === 'ArrowRight') {
+        swipeRight();
+    } else if (e.key === 'ArrowUp') {
+        undoSwipe();
+    }
+});

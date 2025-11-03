@@ -10,8 +10,8 @@ A professional-grade web application that delivers comprehensive property data a
 - Intuitive search with auto-complete suggestions
 - Grid and list view options (grid implemented)
 
-### 📑 Dual-View Tabbed Interface
-**Switch between two specialized views to match your analysis needs:**
+### 📑 Multi-View Tabbed Interface
+**Switch between four specialized views to match your analysis needs:**
 
 #### 🏠 Property Finder Tab (Commercialized View)
 - Beautiful property cards with images and key details
@@ -151,6 +151,62 @@ Interactive mapping with advanced geospatial features powered by Leaflet.js + Op
 - Marker clustering for smooth performance with many properties
 - Efficient filter updates without full re-render
 - Map size invalidation to prevent display issues
+
+#### 🎮 Playground Tab (Property Tinder)
+**The most engaging way to discover properties** - a gamified swipe interface inspired by Tinder:
+
+**❤️ Swipe Interface:**
+- **Tinder-style card stack**: Properties displayed as beautiful swipeable cards
+- **Interactive gestures**: 
+  - Swipe RIGHT (or click ❤️) to LIKE a property
+  - Swipe LEFT (or click ✖️) to PASS
+  - Drag cards with mouse or touch for smooth animations
+- **Visual feedback**:
+  - Live swipe indicators ("LIKE" in green, "PASS" in red)
+  - Card rotation and movement follow your finger/mouse
+  - Smooth card exit animations (fly off screen)
+  - Particle effects (❤️ or ✖️) on each swipe
+- **Card stack effect**: See the next 2 cards behind the current one
+- **Keyboard shortcuts**: 
+  - ← Arrow = Pass
+  - → Arrow = Like  
+  - ↑ Arrow = Undo last swipe
+
+**📊 Swipe Statistics:**
+- Real-time counter for liked and passed properties
+- Swipe history tracking with undo capability
+- Live stats display at the top of the interface
+
+**💖 Liked Properties Collection:**
+- Beautiful grid of all your liked properties
+- Property cards with full details (price, address, features)
+- One-click remove from liked list
+- Collapsible panel to save screen space
+- Export your liked properties (CSV, Excel, JSON)
+
+**🧠 AI-Like Preference Insights:**
+After reviewing properties, the system analyzes your swipe patterns and generates:
+- **Price Range Preference**: Your average preferred price and range
+- **Property Type Preference**: What % of your likes are Houses vs Units
+- **Bedroom Preference**: Your ideal bedroom count (min, max, average)
+- **Location Preference**: Your most-liked suburbs
+- Visual progress bars showing preference strength
+- Animated reveals when insights become available
+
+**✨ Engagement Features:**
+- **Stack replenishment**: Automatically shows next properties as you swipe
+- **Completion celebration**: "All done! 🎉" screen when finished
+- **One-click reset**: Start over and review properties again
+- **Smooth animations**: Professional card transitions and effects
+- **Mobile-friendly**: Works perfectly on touch devices
+- **No properties? Friendly prompt** to search first
+
+**🎯 Perfect For:**
+- Quick property browsing sessions
+- Fun way to shortlist properties with partners/family
+- Decision-making when overwhelmed by options
+- Engaging client presentations
+- Mobile property discovery on-the-go
 
 ### 📊 Investment Intelligence Dashboard
 - **Comprehensive investor metrics** organized in 4 key categories:
@@ -351,14 +407,39 @@ Then navigate to `http://localhost:8000` in your browser.
    - Browse sortable raw data table
    - Export table data directly to CSV
 
-6. **Sort and Filter**
+6. **Explore Map View** (Optional - For Geographic Analysis)
+   - Click the **"Map View"** tab at the top
+   - Interactive features:
+     - View properties on OpenStreetMap (color-coded by price)
+     - Click markers to see property details
+     - Use price range sliders to filter properties
+     - Toggle marker clustering on/off
+     - Enable heat map overlay to see price density
+     - Draw search radius circles to find properties within distance
+     - Compare up to 2 properties side-by-side
+     - Click "Fit All" to auto-zoom to all properties
+   - Perfect for understanding geographic distribution and location-based decisions
+
+7. **Play with Property Tinder** (Optional - For Fun & Quick Shortlisting)
+   - Click the **"Playground"** tab at the top
+   - Swipe through properties Tinder-style:
+     - **Swipe RIGHT** or click ❤️ to LIKE a property
+     - **Swipe LEFT** or click ✖️ to PASS
+     - **Keyboard shortcuts**: ← (Pass), → (Like), ↑ (Undo)
+     - Drag cards with mouse or touch
+   - Build your liked properties collection
+   - View AI-like preference insights after swiping
+   - Export your shortlist for further analysis
+   - Perfect for engaging property discovery sessions
+
+8. **Sort and Filter**
    - Use the dropdown to sort by:
      - Price: High to Low
      - Price: Low to High
      - Number of Bedrooms
      - Newest Listings
 
-7. **Export Data for Analysis**
+9. **Export Data for Analysis**
    - Click the orange **"Export Data"** button (top right of results)
    - Choose your export format:
      - **Export All (CSV)** - Downloads 2 files: Metrics CSV + Properties CSV
@@ -372,7 +453,7 @@ Then navigate to `http://localhost:8000` in your browser.
    - Open CSV/Excel files in Excel, Google Sheets, or any spreadsheet software
    - Compare data from multiple suburbs side-by-side
 
-8. **View Details**
+10. **View Details**
    - Click "View Details" on any property card for more information
    - Properties display with professional formatting and icons
 

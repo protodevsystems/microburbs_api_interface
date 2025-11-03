@@ -143,6 +143,10 @@
                     <i class="fas fa-map-marked-alt"></i>
                     Map View
                 </button>
+                <button class="tab-btn" onclick="switchTab('playground')">
+                    <i class="fas fa-gamepad"></i>
+                    Playground
+                </button>
             </div>
 
             <!-- Tab Content -->
@@ -404,6 +408,95 @@
                     </div>
                 </div>
                 <!-- End Map View Tab -->
+
+                <!-- Playground Tab (Property Tinder) -->
+                <div id="playground-tab" class="tab-panel">
+                    <div class="playground-container">
+                        
+                        <!-- Header Section -->
+                        <div class="playground-header">
+                            <div class="playground-title">
+                                <h2><i class="fas fa-heart"></i> Property Tinder</h2>
+                                <p class="playground-subtitle">Swipe right to like, left to pass</p>
+                            </div>
+                            <div class="playground-stats">
+                                <div class="stat-badge">
+                                    <i class="fas fa-heart"></i>
+                                    <span id="likedCount">0</span> Liked
+                                </div>
+                                <div class="stat-badge">
+                                    <i class="fas fa-times"></i>
+                                    <span id="passedCount">0</span> Passed
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Swipe Interface -->
+                        <div class="swipe-container">
+                            <div class="swipe-stack" id="swipeStack">
+                                <!-- Cards will be dynamically inserted here -->
+                                <div class="swipe-card-placeholder">
+                                    <i class="fas fa-search"></i>
+                                    <h3>Search for properties first</h3>
+                                    <p>Use the search panel above to load properties</p>
+                                </div>
+                            </div>
+
+                            <!-- Swipe Action Indicators -->
+                            <div class="swipe-indicator swipe-indicator-left" id="swipeIndicatorLeft">
+                                <i class="fas fa-times"></i>
+                                <span>PASS</span>
+                            </div>
+                            <div class="swipe-indicator swipe-indicator-right" id="swipeIndicatorRight">
+                                <i class="fas fa-heart"></i>
+                                <span>LIKE</span>
+                            </div>
+
+                            <!-- Swipe Buttons -->
+                            <div class="swipe-buttons">
+                                <button class="swipe-btn swipe-btn-pass" onclick="swipeLeft()" title="Pass (←)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                                <button class="swipe-btn swipe-btn-undo" onclick="undoSwipe()" title="Undo (↑)">
+                                    <i class="fas fa-undo"></i>
+                                </button>
+                                <button class="swipe-btn swipe-btn-like" onclick="swipeRight()" title="Like (→)">
+                                    <i class="fas fa-heart"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Liked Properties Panel -->
+                        <div class="liked-properties-panel">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-heart"></i> Your Liked Properties</h3>
+                                <button class="btn-toggle-panel" onclick="toggleLikedPanel()">
+                                    <i class="fas fa-chevron-up"></i>
+                                </button>
+                            </div>
+                            <div class="liked-properties-grid" id="likedPropertiesGrid">
+                                <div class="no-liked-placeholder">
+                                    <i class="fas fa-heart-broken"></i>
+                                    <p>No liked properties yet</p>
+                                    <p class="small-text">Start swiping to build your collection!</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preference Insights -->
+                        <div class="preference-insights" id="preferenceInsights" style="display: none;">
+                            <div class="insights-header">
+                                <h3><i class="fas fa-brain"></i> Your Preference Profile</h3>
+                                <p>Based on your swipe patterns, here's what you prefer:</p>
+                            </div>
+                            <div class="insights-grid" id="insightsGrid">
+                                <!-- Dynamic preference insights will be inserted here -->
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <!-- End Playground Tab -->
             </div>
             <!-- End Tab Content -->
         </div>
