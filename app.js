@@ -5859,6 +5859,10 @@ async function detectFromAIVision(property) {
         const data = await response.json();
         
         if (!data.success) {
+            // If skip_silently flag is set, Google Maps API key is missing - skip quietly
+            if (data.skip_silently) {
+                return null; // Silently skip to next detection method
+            }
             console.log(`[AI Vision] Analysis failed: ${data.error}`);
             return null;
         }

@@ -30,7 +30,10 @@ MICROBURBS_HEADERS = {
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')  # Load from .env file
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
-# Validate API key is set
+# Google Maps API Configuration (Optional)
+GOOGLE_MAPS_API_KEY = os.getenv('GOOGLE_MAPS_API_KEY')  # Optional for AI Vision
+
+# Validate API keys
 if not OPENAI_API_KEY:
     print("=" * 60)
     print("⚠️  WARNING: OPENAI_API_KEY not found!")
@@ -43,6 +46,23 @@ if not OPENAI_API_KEY:
     print("=" * 60)
     print("Get your API key from: https://platform.openai.com/api-keys")
     print("=" * 60)
+else:
+    print("✅ OpenAI API key loaded successfully")
+    
+if not GOOGLE_MAPS_API_KEY:
+    print("=" * 60)
+    print("ℹ️  OPTIONAL: Google Maps API key not found")
+    print("AI Vision Analysis will use fallback methods without satellite imagery.")
+    print("Other detection methods (text mining, street bearing) will still work.")
+    print("=" * 60)
+    print("To enable AI Vision Analysis:")
+    print("  1. Get a Google Maps API key from:")
+    print("     https://console.cloud.google.com/")
+    print("  2. Add to .env: GOOGLE_MAPS_API_KEY=your-key-here")
+    print("  3. Restart the server")
+    print("=" * 60)
+else:
+    print("✅ Google Maps API key loaded successfully - AI Vision enabled!")
 
 def sanitize_data(obj):
     """
@@ -163,9 +183,11 @@ def analyze_orientation():
             f"&markers=color:red%7C{latitude},{longitude}"
         )
         
-        # If you have a Google Maps API key, add it here:
-        # GOOGLE_MAPS_API_KEY = "YOUR_KEY_HERE"
-        # image_url += f"&key={GOOGLE_MAPS_API_KEY}"
+        # Add Google Maps API key if available
+        if GOOGLE_MAPS_API_KEY:
+            image_url += f"&key={GOOGLE_MAPS_API_KEY}"
+        else:
+            print(f"[Server] WARNING: No Google Maps API key - request may fail")
         
         print(f"[Server] Fetching satellite image from Google Maps...")
         print(f"[Server] Image URL: {image_url}")
@@ -177,6 +199,17 @@ def analyze_orientation():
             if image_response.status_code != 200:
                 print(f"[Server] Failed to fetch image: {image_response.status_code}")
                 print(f"[Server] Response content: {image_response.text[:200]}")
+                
+                # Check if it's a Google Maps API key error
+                if image_response.status_code == 403 and 'API key' in image_response.text:
+                    print(f"[Server] Google Maps API key is required for AI Vision Analysis")
+                    print(f"[Server] Skipping AI Vision - will use other detection methods")
+                    return jsonify({
+                        "success": False, 
+                        "error": "Google Maps API key required",
+                        "skip_silently": True  # Tell frontend to skip without logging error
+                    }), 200  # Return 200 so it's not treated as server error
+                
                 return jsonify({"success": False, "error": f"Failed to fetch satellite image: HTTP {image_response.status_code}"}), 500
         except Exception as e:
             print(f"[Server] Error fetching image: {str(e)}")
