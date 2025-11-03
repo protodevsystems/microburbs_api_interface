@@ -2336,7 +2336,7 @@ canvas {
     filter: brightness(0.7);
 }
 
-.swipe-card:not(:first-child) .swipe-card-content {
+.swipe-card:nth-child(n+3) .swipe-card-content {
     visibility: hidden;
 }
 
