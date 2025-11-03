@@ -435,6 +435,10 @@
                                 <i class="fas fa-trophy"></i>
                                 Battle Royale
                             </button>
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('scores')">
+                                <i class="fas fa-chart-bar"></i>
+                                Investment Scores
+                            </button>
                             <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
                                 <i class="fas fa-folder"></i>
                                 Portfolio
@@ -1235,6 +1239,135 @@
 
                         </div>
                         <!-- End Property Battle Royale Sub-Panel -->
+
+                        <!-- Investment Score Dashboard Sub-Panel -->
+                        <div id="scores-panel" class="playground-subpanel">
+                            
+                            <!-- Score Dashboard Header -->
+                            <div class="score-header">
+                                <div class="score-title">
+                                    <h2><i class="fas fa-chart-bar"></i> Investment Score Dashboard</h2>
+                                    <p class="score-subtitle">Every property gets a report card - see which ones make the Dean's List!</p>
+                                </div>
+                                <div class="score-legend">
+                                    <span class="grade-badge grade-a">A</span>
+                                    <span class="grade-badge grade-b">B</span>
+                                    <span class="grade-badge grade-c">C</span>
+                                    <span class="grade-badge grade-d">D</span>
+                                    <span class="grade-badge grade-f">F</span>
+                                </div>
+                            </div>
+
+                            <!-- Score Controls -->
+                            <div class="score-controls">
+                                <div class="score-filter-group">
+                                    <label><i class="fas fa-filter"></i> Filter by Grade:</label>
+                                    <select id="gradeFilter" onchange="filterByGrade()">
+                                        <option value="all">All Grades</option>
+                                        <option value="A">A Grade Only (Excellent)</option>
+                                        <option value="B">B Grade & Above (Good+)</option>
+                                        <option value="C">C Grade & Above (Average+)</option>
+                                        <option value="D">D Grade & Above</option>
+                                        <option value="F">Show All Including F</option>
+                                    </select>
+                                </div>
+                                <div class="score-sort-group">
+                                    <label><i class="fas fa-sort"></i> Sort by:</label>
+                                    <select id="scoreSort" onchange="sortByScore()">
+                                        <option value="score-desc">Highest Score First</option>
+                                        <option value="score-asc">Lowest Score First</option>
+                                        <option value="value-desc">Best Value First</option>
+                                        <option value="location-desc">Best Location First</option>
+                                        <option value="property-desc">Best Property First</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Dean's List Section -->
+                            <div id="deansListSection" class="deans-list-section" style="display: none;">
+                                <div class="deans-list-banner">
+                                    <i class="fas fa-trophy"></i>
+                                    <h3>🎓 Dean's List - Top 10% Properties</h3>
+                                    <p>These properties scored in the top tier across all categories</p>
+                                </div>
+                                <div id="deansListGrid" class="deans-list-grid">
+                                    <!-- Dean's list properties populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Score Summary Stats -->
+                            <div class="score-summary">
+                                <div class="summary-card">
+                                    <div class="summary-icon"><i class="fas fa-star"></i></div>
+                                    <div class="summary-content">
+                                        <div class="summary-label">Average Score</div>
+                                        <div class="summary-value" id="avgScore">0.0</div>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-icon"><i class="fas fa-award"></i></div>
+                                    <div class="summary-content">
+                                        <div class="summary-label">Top Score</div>
+                                        <div class="summary-value" id="topScore">0.0</div>
+                                    </div>
+                                </div>
+                                <div class="summary-card">
+                                    <div class="summary-icon"><i class="fas fa-graduation-cap"></i></div>
+                                    <div class="summary-content">
+                                        <div class="summary-label">Grade Distribution</div>
+                                        <div class="summary-value" id="gradeDistribution">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Scored Properties Grid -->
+                            <div id="scoredPropertiesGrid" class="scored-properties-grid">
+                                <!-- Scored property cards populated here -->
+                            </div>
+
+                            <!-- Score Detail Modal -->
+                            <div id="scoreDetailModal" class="score-modal" style="display: none;">
+                                <div class="score-modal-content">
+                                    <button class="score-modal-close" onclick="closeScoreDetail()">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                    
+                                    <div class="score-detail-header">
+                                        <h3 id="scoreDetailTitle">Property Score Report</h3>
+                                        <div id="scoreDetailGrade" class="score-detail-grade"></div>
+                                    </div>
+
+                                    <div class="score-detail-body">
+                                        <div class="score-detail-overall">
+                                            <div class="overall-score-circle">
+                                                <div class="overall-score-number" id="scoreDetailOverall">0.0</div>
+                                                <div class="overall-score-label">Overall Score</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="score-chart-container">
+                                            <canvas id="scoreRadarChart"></canvas>
+                                        </div>
+
+                                        <div class="score-breakdown">
+                                            <h4>Score Breakdown</h4>
+                                            <div id="scoreBreakdownList" class="score-breakdown-list">
+                                                <!-- Breakdown items populated here -->
+                                            </div>
+                                        </div>
+
+                                        <div class="score-insights">
+                                            <h4>💡 Insights</h4>
+                                            <div id="scoreInsights" class="score-insights-content">
+                                                <!-- Insights populated here -->
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Investment Score Dashboard Sub-Panel -->
 
                     </div>
                 </div>
