@@ -1,20 +1,18 @@
 @echo off
+REM This file is no longer needed - start_server.bat now uses .env file
+REM Please use env.example as a template for your .env file instead
+echo.
 echo ============================================================
-echo Starting Microburbs API Proxy Server
-echo ============================================================
-echo.
-echo Setting environment variables...
-REM Set your OpenAI API key here for AI Vision Analysis
-REM Copy this file to start_server.bat and add your actual API key
-set OPENAI_API_KEY=your-openai-api-key-here
-echo.
-echo Activating virtual environment...
-call microburbs\Scripts\activate.bat
-echo.
-echo Starting Flask server on http://localhost:5000
-echo Press Ctrl+C to stop the server
+echo DEPRECATED: This file is no longer used
 echo ============================================================
 echo.
-python server.py
+echo API keys are now managed via .env file for better security
+echo.
+echo Setup Instructions:
+echo   1. Copy env.example to .env
+echo   2. Edit .env and add your OpenAI API key
+echo   3. Run start_server.bat
+echo.
+echo ============================================================
 pause
 

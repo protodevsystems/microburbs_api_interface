@@ -63,6 +63,3 @@ instance/
 .DS_Store
 Thumbs.db
 
-# Local configuration with API keys
-start_server.bat
-

@@ -727,22 +727,37 @@ The application consists of three main components:
 - Python 3.7 or higher
 - pip (Python package manager)
 - Modern web browser (Chrome, Firefox, Edge, Safari)
+- OpenAI API key (for AI Vision Analysis feature) - Get one from [OpenAI Platform](https://platform.openai.com/api-keys)
 
 ### Installation
 
-1. **Create a Python virtual environment:**
+1. **Configure Environment Variables (IMPORTANT!):**
+
+```bash
+# Copy the example environment file
+copy env.example .env
+
+# Edit .env and add your OpenAI API key
+# Open .env in your text editor and replace:
+# OPENAI_API_KEY=your-openai-api-key-here
+# with your actual key from https://platform.openai.com/api-keys
+```
+
+**⚠️ SECURITY NOTE:** The `.env` file contains your API keys and is automatically excluded from git (via `.gitignore`). Never commit this file to version control!
+
+2. **Create a Python virtual environment:**
 
 ```bash
 python -m venv microburbs
 ```
 
-2. **Activate the virtual environment:**
+3. **Activate the virtual environment:**
 
 ```bash
 microburbs\Scripts\activate
 ```
 
-3. **Install Python dependencies:**
+4. **Install Python dependencies:**
 
 ```bash
 pip install -r requirements.txt

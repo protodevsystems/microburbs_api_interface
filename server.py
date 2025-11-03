@@ -10,6 +10,11 @@ import math
 import json
 import base64
 from io import BytesIO
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
@@ -22,19 +27,21 @@ MICROBURBS_HEADERS = {
 }
 
 # OpenAI API Configuration
-import os
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')  # REQUIRED: Set as environment variable
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')  # Load from .env file
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 
 # Validate API key is set
 if not OPENAI_API_KEY:
     print("=" * 60)
-    print("⚠️  WARNING: OPENAI_API_KEY environment variable not set!")
+    print("⚠️  WARNING: OPENAI_API_KEY not found!")
     print("AI Vision Analysis will not work without an OpenAI API key.")
     print("=" * 60)
-    print("To set the API key:")
-    print("  Windows: set OPENAI_API_KEY=your-api-key-here")
-    print("  Linux/Mac: export OPENAI_API_KEY=your-api-key-here")
+    print("Setup Instructions:")
+    print("  1. Copy env.example to .env")
+    print("  2. Edit .env and add your OpenAI API key")
+    print("  3. Restart the server")
+    print("=" * 60)
+    print("Get your API key from: https://platform.openai.com/api-keys")
     print("=" * 60)
 
 def sanitize_data(obj):
