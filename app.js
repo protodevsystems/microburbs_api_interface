@@ -3412,8 +3412,43 @@ function updateTimelineBySlider(percentage) {
     // Update active count
     document.getElementById('timelineActiveCount').textContent = filteredData.length;
     
+    // Update chart with filtered data
+    updateTimelineChart(filteredData, currentDate);
+    
     // Render filtered properties
     renderTimelineProperties(filteredData);
+}
+
+// Update Timeline Chart with Filtered Data
+function updateTimelineChart(filteredData, currentDate) {
+    if (!timelineChart) return;
+    
+    // Group filtered data by month
+    const monthlyData = {};
+    filteredData.forEach(item => {
+        const monthKey = `${item.listingDate.getFullYear()}-${String(item.listingDate.getMonth() + 1).padStart(2, '0')}`;
+        if (!monthlyData[monthKey]) {
+            monthlyData[monthKey] = { count: 0, totalPrice: 0 };
+        }
+        monthlyData[monthKey].count++;
+        monthlyData[monthKey].totalPrice += item.property.price || 0;
+    });
+    
+    const labels = Object.keys(monthlyData).map(key => {
+        const [year, month] = key.split('-');
+        return new Date(year, month - 1).toLocaleDateString('en-AU', { month: 'short', year: 'numeric' });
+    });
+    
+    const counts = Object.values(monthlyData).map(d => d.count);
+    const avgPrices = Object.values(monthlyData).map(d => d.totalPrice / d.count);
+    
+    // Update chart data
+    timelineChart.data.labels = labels;
+    timelineChart.data.datasets[0].data = counts;
+    timelineChart.data.datasets[1].data = avgPrices;
+    
+    // Smooth update without animation (for slider dragging)
+    timelineChart.update('none');
 }
 
 // Render Timeline Properties
