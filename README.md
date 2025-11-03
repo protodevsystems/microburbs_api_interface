@@ -10,6 +10,34 @@ A professional-grade web application that delivers comprehensive property data a
 - Intuitive search with auto-complete suggestions
 - Grid and list view options (grid implemented)
 
+### 📑 Dual-View Tabbed Interface
+**Switch between two specialized views to match your analysis needs:**
+
+#### 🏠 Property Finder Tab (Commercialized View)
+- Beautiful property cards with images and key details
+- Investment intelligence dashboard with intuitive metrics
+- Perfect for client presentations and quick browsing
+- Professional layout for real estate agents and investors
+
+#### 🔬 Technical Insights Tab (Data Science View)
+Advanced analytics for data-driven decision making:
+- **Statistical Analysis**: 12+ statistical metrics including:
+  - Sample size, mean, median, standard deviation
+  - Quartiles (Q1, Q3), IQR, coefficient of variation
+  - Price range and skewness analysis
+  - Average property characteristics
+- **Price Distribution Chart**: Interactive histogram showing market price spread across 10 bins
+- **Property Characteristics Matrix**: Distribution breakdown of:
+  - Property types (House, Unit, etc.)
+  - Bedroom counts
+  - Bathroom counts
+- **Correlation Analysis**: Scatter plot showing price vs. number of bedrooms
+- **Market Segmentation**: Doughnut chart visualizing market composition by property type
+- **Data Quality Report**: Real-time assessment of data completeness across 6 key fields
+- **Raw Data Table**: Sortable, searchable table with all property details
+- **One-Click Export**: Export technical data table directly to CSV
+- **All charts built with Chart.js** for interactive, professional visualizations
+
 ### 📊 Investment Intelligence Dashboard
 - **Comprehensive investor metrics** organized in 4 key categories:
   
@@ -189,20 +217,34 @@ Then navigate to `http://localhost:8000` in your browser.
    - View price range (min to max)
    - Check average bedrooms and bathrooms
 
-4. **Browse Properties**
+4. **Browse Properties** (Property Finder Tab - Default)
    - Scroll through professional property cards
    - View key features: bedrooms, bathrooms, parking, land size
    - Read property descriptions and listing dates
    - See property type badges (House, Unit, etc.)
 
-5. **Sort and Filter**
+5. **Switch to Technical Insights** (Optional - For Data Analysis)
+   - Click the **"Technical Insights"** tab at the top
+   - Review comprehensive statistical analysis:
+     - Mean, median, standard deviation, quartiles
+     - Coefficient of variation and skewness
+   - Analyze interactive charts:
+     - Price distribution histogram
+     - Price vs. bedrooms correlation scatter plot
+     - Market segmentation doughnut chart
+   - Examine property characteristics matrix
+   - Check data quality report (completeness percentages)
+   - Browse sortable raw data table
+   - Export table data directly to CSV
+
+6. **Sort and Filter**
    - Use the dropdown to sort by:
      - Price: High to Low
      - Price: Low to High
      - Number of Bedrooms
      - Newest Listings
 
-6. **Export Data for Analysis**
+7. **Export Data for Analysis**
    - Click the orange **"Export Data"** button (top right of results)
    - Choose your export format:
      - **Export All (CSV)** - Downloads 2 files: Metrics CSV + Properties CSV
@@ -216,7 +258,7 @@ Then navigate to `http://localhost:8000` in your browser.
    - Open CSV/Excel files in Excel, Google Sheets, or any spreadsheet software
    - Compare data from multiple suburbs side-by-side
 
-7. **View Details**
+8. **View Details**
    - Click "View Details" on any property card for more information
    - Properties display with professional formatting and icons
 

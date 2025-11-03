@@ -953,3 +953,463 @@ function downloadFile(content, filename, mimeType) {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
 }
+
+// ==================== TAB SWITCHING ====================
+function switchTab(tabName) {
+    console.log('Switching to tab:', tabName);
+    
+    // Update tab buttons
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.closest('.tab-btn').classList.add('active');
+    
+    // Update tab panels
+    document.querySelectorAll('.tab-panel').forEach(panel => {
+        panel.classList.remove('active');
+    });
+    document.getElementById(`${tabName}-tab`).classList.add('active');
+    
+    // If switching to technical insights, generate the analysis
+    if (tabName === 'technical-insights' && currentProperties.length > 0) {
+        generateTechnicalInsights();
+    }
+}
+
+// ==================== TECHNICAL INSIGHTS GENERATION ====================
+let chartInstances = {};
+
+function generateTechnicalInsights() {
+    console.log('Generating technical insights for', currentProperties.length, 'properties');
+    
+    generateStatisticalAnalysis();
+    generatePriceDistributionChart();
+    generateCharacteristicsMatrix();
+    generateCorrelationChart();
+    generateSegmentationChart();
+    generateDataQualityReport();
+    generateRawDataTable();
+}
+
+// Statistical Analysis
+function generateStatisticalAnalysis() {
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    const bedrooms = currentProperties.map(p => p.attributes?.bedrooms).filter(b => b);
+    const bathrooms = currentProperties.map(p => p.attributes?.bathrooms).filter(b => b);
+    const garages = currentProperties.map(p => p.attributes?.garage_spaces).filter(g => g);
+    
+    const stats = {
+        'Sample Size': { value: currentProperties.length, detail: 'Total properties' },
+        'Mean Price': { value: `$${formatNumber(calculateMean(prices))}`, detail: `σ = $${formatNumber(calculateStdDev(prices))}` },
+        'Median Price': { value: `$${formatNumber(calculateMedian(prices))}`, detail: 'Middle value' },
+        'Price Range': { value: `$${formatNumber(Math.max(...prices) - Math.min(...prices))}`, detail: `$${formatNumber(Math.min(...prices))} - $${formatNumber(Math.max(...prices))}` },
+        'Coefficient of Variation': { value: `${(calculateStdDev(prices) / calculateMean(prices) * 100).toFixed(1)}%`, detail: 'Price variability' },
+        'Q1 (25th percentile)': { value: `$${formatNumber(calculatePercentile(prices, 25))}`, detail: 'Lower quartile' },
+        'Q3 (75th percentile)': { value: `$${formatNumber(calculatePercentile(prices, 75))}`, detail: 'Upper quartile' },
+        'IQR': { value: `$${formatNumber(calculatePercentile(prices, 75) - calculatePercentile(prices, 25))}`, detail: 'Interquartile range' },
+        'Avg Bedrooms': { value: calculateMean(bedrooms).toFixed(2), detail: `Range: ${Math.min(...bedrooms)}-${Math.max(...bedrooms)}` },
+        'Avg Bathrooms': { value: calculateMean(bathrooms).toFixed(2), detail: `Range: ${Math.min(...bathrooms)}-${Math.max(...bathrooms)}` },
+        'Avg Garage': { value: calculateMean(garages).toFixed(2), detail: `Range: ${Math.min(...garages)}-${Math.max(...garages)}` },
+        'Skewness': { value: calculateSkewness(prices).toFixed(3), detail: calculateSkewness(prices) > 0 ? 'Right-skewed' : 'Left-skewed' }
+    };
+    
+    let html = '';
+    for (const [label, data] of Object.entries(stats)) {
+        html += `
+            <div class="stat-box">
+                <div class="stat-box-label">${label}</div>
+                <div class="stat-box-value">${data.value}</div>
+                <div class="stat-box-detail">${data.detail}</div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('statisticalAnalysis').innerHTML = html;
+}
+
+// Price Distribution Chart
+function generatePriceDistributionChart() {
+    const canvas = document.getElementById('priceDistributionChart');
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing chart
+    if (chartInstances.priceDistribution) {
+        chartInstances.priceDistribution.destroy();
+    }
+    
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0).sort((a, b) => a - b);
+    
+    // Create histogram bins
+    const bins = 10;
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    const binSize = (max - min) / bins;
+    
+    const histogram = Array(bins).fill(0);
+    const labels = [];
+    
+    for (let i = 0; i < bins; i++) {
+        const binStart = min + (i * binSize);
+        const binEnd = min + ((i + 1) * binSize);
+        labels.push(`$${formatNumber(binStart)}-$${formatNumber(binEnd)}`);
+        
+        prices.forEach(price => {
+            if (price >= binStart && (i === bins - 1 ? price <= binEnd : price < binEnd)) {
+                histogram[i]++;
+            }
+        });
+    }
+    
+    chartInstances.priceDistribution = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Frequency',
+                data: histogram,
+                backgroundColor: 'rgba(253, 119, 0, 0.7)',
+                borderColor: 'rgba(253, 119, 0, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Price Distribution Histogram',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Properties'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Price Range'
+                    },
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Property Characteristics Matrix
+function generateCharacteristicsMatrix() {
+    const types = {};
+    const bedroomCounts = {};
+    const bathroomCounts = {};
+    
+    currentProperties.forEach(prop => {
+        const type = prop.property_type || 'Unknown';
+        types[type] = (types[type] || 0) + 1;
+        
+        const beds = prop.attributes?.bedrooms || 0;
+        bedroomCounts[beds] = (bedroomCounts[beds] || 0) + 1;
+        
+        const baths = prop.attributes?.bathrooms || 0;
+        bathroomCounts[baths] = (bathroomCounts[baths] || 0) + 1;
+    });
+    
+    let html = '';
+    
+    // Property Types
+    html += `
+        <div class="matrix-card">
+            <h4><i class="fas fa-building"></i> Property Types</h4>
+            ${Object.entries(types).sort((a, b) => b[1] - a[1]).map(([type, count]) => `
+                <div class="matrix-row">
+                    <span class="matrix-label">${type}</span>
+                    <span class="matrix-value">${count} (${(count/currentProperties.length*100).toFixed(1)}%)</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Bedroom Distribution
+    html += `
+        <div class="matrix-card">
+            <h4><i class="fas fa-bed"></i> Bedroom Distribution</h4>
+            ${Object.entries(bedroomCounts).sort((a, b) => a[0] - b[0]).map(([beds, count]) => `
+                <div class="matrix-row">
+                    <span class="matrix-label">${beds} Bedroom${beds != 1 ? 's' : ''}</span>
+                    <span class="matrix-value">${count} (${(count/currentProperties.length*100).toFixed(1)}%)</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    // Bathroom Distribution
+    html += `
+        <div class="matrix-card">
+            <h4><i class="fas fa-bath"></i> Bathroom Distribution</h4>
+            ${Object.entries(bathroomCounts).sort((a, b) => a[0] - b[0]).map(([baths, count]) => `
+                <div class="matrix-row">
+                    <span class="matrix-label">${baths} Bathroom${baths != 1 ? 's' : ''}</span>
+                    <span class="matrix-value">${count} (${(count/currentProperties.length*100).toFixed(1)}%)</span>
+                </div>
+            `).join('')}
+        </div>
+    `;
+    
+    document.getElementById('characteristicsMatrix').innerHTML = html;
+}
+
+// Correlation Chart (Bedrooms vs Price)
+function generateCorrelationChart() {
+    const canvas = document.getElementById('correlationChart');
+    const ctx = canvas.getContext('2d');
+    
+    if (chartInstances.correlation) {
+        chartInstances.correlation.destroy();
+    }
+    
+    const data = currentProperties
+        .filter(p => p.price && p.attributes?.bedrooms)
+        .map(p => ({
+            x: p.attributes.bedrooms,
+            y: p.price
+        }));
+    
+    chartInstances.correlation = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Price vs Bedrooms',
+                data: data,
+                backgroundColor: 'rgba(253, 119, 0, 0.6)',
+                borderColor: 'rgba(253, 119, 0, 1)',
+                borderWidth: 1,
+                pointRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Price vs Number of Bedrooms',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Number of Bedrooms'
+                    },
+                    ticks: {
+                        stepSize: 1
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Price ($)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + formatNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Market Segmentation Chart
+function generateSegmentationChart() {
+    const canvas = document.getElementById('segmentationChart');
+    const ctx = canvas.getContext('2d');
+    
+    if (chartInstances.segmentation) {
+        chartInstances.segmentation.destroy();
+    }
+    
+    const types = {};
+    currentProperties.forEach(prop => {
+        const type = prop.property_type || 'Unknown';
+        types[type] = (types[type] || 0) + 1;
+    });
+    
+    chartInstances.segmentation = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(types),
+            datasets: [{
+                data: Object.values(types),
+                backgroundColor: [
+                    'rgba(253, 119, 0, 0.8)',
+                    'rgba(253, 150, 50, 0.8)',
+                    'rgba(253, 180, 100, 0.8)',
+                    'rgba(100, 100, 100, 0.8)',
+                    'rgba(150, 150, 150, 0.8)'
+                ],
+                borderColor: '#ffffff',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Market Composition by Property Type',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+}
+
+// Data Quality Report
+function generateDataQualityReport() {
+    const total = currentProperties.length;
+    
+    const completeness = {
+        price: currentProperties.filter(p => p.price).length,
+        address: currentProperties.filter(p => p.address?.street).length,
+        bedrooms: currentProperties.filter(p => p.attributes?.bedrooms).length,
+        bathrooms: currentProperties.filter(p => p.attributes?.bathrooms).length,
+        landSize: currentProperties.filter(p => p.attributes?.land_size).length,
+        description: currentProperties.filter(p => p.attributes?.description).length
+    };
+    
+    const qualityScore = Object.values(completeness).reduce((a, b) => a + b, 0) / (Object.keys(completeness).length * total) * 100;
+    
+    let html = `
+        <div class="quality-card ${qualityScore >= 80 ? 'good' : qualityScore >= 60 ? 'warning' : 'error'}">
+            <div class="quality-label">Overall Data Quality</div>
+            <div class="quality-value">${qualityScore.toFixed(1)}%</div>
+            <div class="quality-description">
+                ${qualityScore >= 80 ? 'Excellent data completeness' : 
+                  qualityScore >= 60 ? 'Good, with some missing fields' : 
+                  'Fair, significant missing data'}
+            </div>
+        </div>
+    `;
+    
+    for (const [field, count] of Object.entries(completeness)) {
+        const percentage = (count / total * 100);
+        const status = percentage >= 80 ? 'good' : percentage >= 60 ? 'warning' : 'error';
+        html += `
+            <div class="quality-card ${status}">
+                <div class="quality-label">${field.charAt(0).toUpperCase() + field.slice(1)}</div>
+                <div class="quality-value">${percentage.toFixed(1)}%</div>
+                <div class="quality-description">${count} of ${total} records</div>
+            </div>
+        `;
+    }
+    
+    document.getElementById('dataQualityReport').innerHTML = html;
+}
+
+// Raw Data Table
+function generateRawDataTable() {
+    let html = `
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Address</th>
+                    <th>Type</th>
+                    <th>Price</th>
+                    <th>Beds</th>
+                    <th>Baths</th>
+                    <th>Garage</th>
+                    <th>Land Size</th>
+                    <th>Listed</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    currentProperties.forEach(prop => {
+        html += `
+            <tr>
+                <td>${prop.address?.street || 'N/A'}</td>
+                <td>${prop.property_type || 'N/A'}</td>
+                <td>$${formatNumber(prop.price || 0)}</td>
+                <td>${prop.attributes?.bedrooms || 'N/A'}</td>
+                <td>${prop.attributes?.bathrooms || 'N/A'}</td>
+                <td>${prop.attributes?.garage_spaces || 'N/A'}</td>
+                <td>${prop.attributes?.land_size || 'N/A'}</td>
+                <td>${prop.listing_date || 'N/A'}</td>
+            </tr>
+        `;
+    });
+    
+    html += `
+            </tbody>
+        </table>
+    `;
+    
+    document.getElementById('rawDataTable').innerHTML = html;
+}
+
+// Export Table Data
+function exportTableData() {
+    const csv = generatePropertiesCSV();
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `${currentSuburb.replace(/\s+/g, '_')}_${timestamp}_DataTable.csv`;
+    downloadFile(csv, filename, 'text/csv');
+    console.log('Exported data table as CSV');
+}
+
+// ==================== STATISTICAL HELPER FUNCTIONS ====================
+function calculateMean(arr) {
+    if (arr.length === 0) return 0;
+    return arr.reduce((a, b) => a + b, 0) / arr.length;
+}
+
+function calculateStdDev(arr) {
+    if (arr.length === 0) return 0;
+    const mean = calculateMean(arr);
+    const squareDiffs = arr.map(value => Math.pow(value - mean, 2));
+    const avgSquareDiff = calculateMean(squareDiffs);
+    return Math.sqrt(avgSquareDiff);
+}
+
+function calculatePercentile(arr, percentile) {
+    if (arr.length === 0) return 0;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const index = (percentile / 100) * (sorted.length - 1);
+    const lower = Math.floor(index);
+    const upper = Math.ceil(index);
+    const weight = index % 1;
+    
+    if (lower === upper) return sorted[lower];
+    return sorted[lower] * (1 - weight) + sorted[upper] * weight;
+}
+
+function calculateSkewness(arr) {
+    if (arr.length === 0) return 0;
+    const mean = calculateMean(arr);
+    const stdDev = calculateStdDev(arr);
+    const n = arr.length;
+    
+    const cubedDiffs = arr.map(value => Math.pow((value - mean) / stdDev, 3));
+    return (n / ((n - 1) * (n - 2))) * cubedDiffs.reduce((a, b) => a + b, 0);
+}
