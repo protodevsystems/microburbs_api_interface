@@ -3831,7 +3831,7 @@ function createMortgageChart(principal, interest, deposit) {
                 legend: {
                     position: 'bottom',
                     labels: {
-                        color: '#ffffff',
+                        color: '#e5e5e5',
                         padding: 15,
                         font: {
                             size: 12
@@ -3841,7 +3841,7 @@ function createMortgageChart(principal, interest, deposit) {
                 title: {
                     display: true,
                     text: 'Loan Composition',
-                    color: '#ffffff',
+                    color: '#e5e5e5',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -3984,7 +3984,7 @@ function createROIChart(scenarios, timeframe, purchasePrice) {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: '#ffffff',
+                        color: '#e5e5e5',
                         padding: 15,
                         font: {
                             size: 12
@@ -3994,7 +3994,7 @@ function createROIChart(scenarios, timeframe, purchasePrice) {
                 title: {
                     display: true,
                     text: 'Property Value Projection',
-                    color: '#ffffff',
+                    color: '#e5e5e5',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -4005,7 +4005,7 @@ function createROIChart(scenarios, timeframe, purchasePrice) {
                 y: {
                     beginAtZero: false,
                     ticks: {
-                        color: '#999999',
+                        color: '#cccccc',
                         callback: function(value) {
                             return '$' + (value / 1000).toFixed(0) + 'k';
                         }
@@ -4016,7 +4016,7 @@ function createROIChart(scenarios, timeframe, purchasePrice) {
                 },
                 x: {
                     ticks: {
-                        color: '#999999'
+                        color: '#cccccc'
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
@@ -4136,7 +4136,7 @@ function createCashFlowChart(income, mortgage, council, strata, insurance, maint
                 title: {
                     display: true,
                     text: 'Income vs Expenses Breakdown',
-                    color: '#ffffff',
+                    color: '#e5e5e5',
                     font: {
                         size: 16,
                         weight: 'bold'
@@ -4146,7 +4146,7 @@ function createCashFlowChart(income, mortgage, council, strata, insurance, maint
             scales: {
                 y: {
                     ticks: {
-                        color: '#999999',
+                        color: '#cccccc',
                         callback: function(value) {
                             return '$' + (Math.abs(value) / 1000).toFixed(0) + 'k';
                         }
@@ -4157,7 +4157,7 @@ function createCashFlowChart(income, mortgage, council, strata, insurance, maint
                 },
                 x: {
                     ticks: {
-                        color: '#999999'
+                        color: '#cccccc'
                     },
                     grid: {
                         color: 'rgba(255, 255, 255, 0.1)'
