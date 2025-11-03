@@ -988,6 +988,14 @@ let chartInstances = {};
 function generateTechnicalInsights() {
     console.log('Generating technical insights for', currentProperties.length, 'properties');
     
+    // New investment-focused analytics
+    generateInvestmentScores();
+    generateValueAnalysis();
+    generateOutlierDetection();
+    generateROIProjections();
+    generateTopPicks();
+    
+    // Existing analytics
     generateStatisticalAnalysis();
     generatePriceDistributionChart();
     generateCharacteristicsMatrix();
@@ -995,6 +1003,511 @@ function generateTechnicalInsights() {
     generateSegmentationChart();
     generateDataQualityReport();
     generateRawDataTable();
+}
+
+// ==================== NEW INVESTMENT ANALYTICS ====================
+
+// Calculate comprehensive investment score for each property
+function calculateInvestmentScore(property) {
+    let score = 0;
+    let factors = {};
+    
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    const medianPrice = calculateMedian(prices);
+    const avgBedrooms = calculateMean(currentProperties.map(p => p.attributes?.bedrooms).filter(b => b));
+    
+    // Price competitiveness (30 points max)
+    const priceRatio = property.price / medianPrice;
+    if (priceRatio < 0.8) {
+        factors.price = 30;
+    } else if (priceRatio < 1.0) {
+        factors.price = 25;
+    } else if (priceRatio < 1.2) {
+        factors.price = 15;
+    } else {
+        factors.price = 5;
+    }
+    
+    // Land size value (20 points max)
+    const landSize = parseLandSize(property.attributes?.land_size);
+    if (landSize > 700) {
+        factors.land = 20;
+    } else if (landSize > 600) {
+        factors.land = 15;
+    } else if (landSize > 500) {
+        factors.land = 10;
+    } else {
+        factors.land = 5;
+    }
+    
+    // Property features (25 points max)
+    const bedrooms = property.attributes?.bedrooms || 0;
+    const bathrooms = property.attributes?.bathrooms || 0;
+    const garages = property.attributes?.garage_spaces || 0;
+    factors.features = Math.min(25, (bedrooms * 5) + (bathrooms * 4) + (garages * 3));
+    
+    // Property type preference (15 points max)
+    if (property.property_type === 'House') {
+        factors.type = 15;
+    } else if (property.property_type === 'Townhouse') {
+        factors.type = 10;
+    } else {
+        factors.type = 5;
+    }
+    
+    // Listing recency (10 points max)
+    const listingDate = new Date(property.listing_date);
+    const daysSinceListing = (new Date() - listingDate) / (1000 * 60 * 60 * 24);
+    if (daysSinceListing < 7) {
+        factors.recency = 10;
+    } else if (daysSinceListing < 30) {
+        factors.recency = 7;
+    } else {
+        factors.recency = 3;
+    }
+    
+    score = Object.values(factors).reduce((a, b) => a + b, 0);
+    
+    return { score: Math.round(score), factors };
+}
+
+// Generate Investment Opportunity Scores
+function generateInvestmentScores() {
+    const scoredProperties = currentProperties.map(prop => ({
+        ...prop,
+        investmentScore: calculateInvestmentScore(prop)
+    })).sort((a, b) => b.investmentScore.score - a.investmentScore.score);
+    
+    let html = '';
+    const topProperties = scoredProperties.slice(0, 6);
+    
+    topProperties.forEach((prop, index) => {
+        const isTopPick = index < 3;
+        html += `
+            <div class="opportunity-card ${isTopPick ? 'top-pick' : ''}">
+                ${isTopPick ? `<div class="opportunity-badge">TOP ${index + 1}</div>` : ''}
+                <h4>${prop.property_type || 'Property'}</h4>
+                <div class="opportunity-address">${prop.address?.street || 'Address not available'}</div>
+                
+                <div class="opportunity-score">
+                    <div class="score-circle">
+                        <div class="score-value">${prop.investmentScore.score}</div>
+                        <div class="score-label">Score</div>
+                    </div>
+                    <div class="score-factors">
+                        <div class="factor-bar">
+                            <div class="factor-label">
+                                <span>Price Value</span>
+                                <span>${prop.investmentScore.factors.price}/30</span>
+                            </div>
+                            <div class="factor-progress">
+                                <div class="factor-fill" style="width: ${(prop.investmentScore.factors.price/30*100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="factor-bar">
+                            <div class="factor-label">
+                                <span>Land Size</span>
+                                <span>${prop.investmentScore.factors.land}/20</span>
+                            </div>
+                            <div class="factor-progress">
+                                <div class="factor-fill" style="width: ${(prop.investmentScore.factors.land/20*100)}%"></div>
+                            </div>
+                        </div>
+                        <div class="factor-bar">
+                            <div class="factor-label">
+                                <span>Features</span>
+                                <span>${prop.investmentScore.factors.features}/25</span>
+                            </div>
+                            <div class="factor-progress">
+                                <div class="factor-fill" style="width: ${(prop.investmentScore.factors.features/25*100)}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="opportunity-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Price</div>
+                        <div class="detail-value">$${formatNumber(prop.price)}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Beds</div>
+                        <div class="detail-value">${prop.attributes?.bedrooms || 'N/A'}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Land</div>
+                        <div class="detail-value">${prop.attributes?.land_size || 'N/A'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('investmentScores').innerHTML = html;
+}
+
+// Helper function to parse land size
+function parseLandSize(landStr) {
+    if (!landStr) return 0;
+    const match = String(landStr).match(/[\d.]+/);
+    return match ? parseFloat(match[0]) : 0;
+}
+
+// Generate Value per Square Meter Analysis
+function generateValueAnalysis() {
+    const propertiesWithValue = currentProperties
+        .filter(p => p.price && p.attributes?.land_size)
+        .map(p => {
+            const landSize = parseLandSize(p.attributes.land_size);
+            return {
+                ...p,
+                landSize,
+                pricePerSqm: landSize > 0 ? p.price / landSize : 0
+            };
+        })
+        .filter(p => p.pricePerSqm > 0)
+        .sort((a, b) => a.pricePerSqm - b.pricePerSqm);
+    
+    if (propertiesWithValue.length === 0) {
+        document.getElementById('valueAnalysisChart').style.display = 'none';
+        document.getElementById('valueMetrics').innerHTML = '<p>Insufficient land size data for value analysis</p>';
+        return;
+    }
+    
+    // Create chart
+    const canvas = document.getElementById('valueAnalysisChart');
+    const ctx = canvas.getContext('2d');
+    
+    if (chartInstances.valueAnalysis) {
+        chartInstances.valueAnalysis.destroy();
+    }
+    
+    chartInstances.valueAnalysis = new Chart(ctx, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Price vs Land Size',
+                data: propertiesWithValue.map(p => ({
+                    x: p.landSize,
+                    y: p.price,
+                    property: p
+                })),
+                backgroundColor: propertiesWithValue.map((p, i) => {
+                    if (i < 3) return 'rgba(16, 185, 129, 0.7)'; // Best value - green
+                    if (i >= propertiesWithValue.length - 3) return 'rgba(239, 68, 68, 0.7)'; // Worst value - red
+                    return 'rgba(253, 119, 0, 0.6)'; // Normal - orange
+                }),
+                borderColor: 'rgba(253, 119, 0, 1)',
+                borderWidth: 2,
+                pointRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Property Value Analysis (Green = Best Value, Red = Expensive)',
+                    font: { size: 16, weight: 'bold' }
+                },
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const prop = context.raw.property;
+                            return [
+                                `Address: ${prop.address?.street || 'N/A'}`,
+                                `Price: $${formatNumber(prop.price)}`,
+                                `Land: ${prop.landSize} m²`,
+                                `$/m²: $${formatNumber(prop.pricePerSqm)}`
+                            ];
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Land Size (m²)'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Price ($)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return '$' + formatNumber(value);
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Display key metrics
+    const avgPricePerSqm = calculateMean(propertiesWithValue.map(p => p.pricePerSqm));
+    const bestValue = propertiesWithValue[0];
+    const worstValue = propertiesWithValue[propertiesWithValue.length - 1];
+    
+    let html = `
+        <div class="value-metric-card">
+            <div class="value-metric-label">Average $/m²</div>
+            <div class="value-metric-value">$${formatNumber(avgPricePerSqm)}</div>
+        </div>
+        <div class="value-metric-card best-value">
+            <div class="value-metric-label">Best Value</div>
+            <div class="value-metric-value">$${formatNumber(bestValue.pricePerSqm)}/m²</div>
+            <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;">
+                ${bestValue.address?.street?.substring(0, 30) || 'Property'}...
+            </div>
+        </div>
+        <div class="value-metric-card worst-value">
+            <div class="value-metric-label">Most Expensive</div>
+            <div class="value-metric-value">$${formatNumber(worstValue.pricePerSqm)}/m²</div>
+            <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;">
+                ${worstValue.address?.street?.substring(0, 30) || 'Property'}...
+            </div>
+        </div>
+        <div class="value-metric-card">
+            <div class="value-metric-label">Value Spread</div>
+            <div class="value-metric-value">${((worstValue.pricePerSqm / bestValue.pricePerSqm - 1) * 100).toFixed(0)}%</div>
+        </div>
+    `;
+    
+    document.getElementById('valueMetrics').innerHTML = html;
+}
+
+// Generate Outlier Detection
+function generateOutlierDetection() {
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    const mean = calculateMean(prices);
+    const stdDev = calculateStdDev(prices);
+    const q1 = calculatePercentile(prices, 25);
+    const q3 = calculatePercentile(prices, 75);
+    const iqr = q3 - q1;
+    
+    // Statistical outliers using IQR method
+    const lowerFence = q1 - (1.5 * iqr);
+    const upperFence = q3 + (1.5 * iqr);
+    
+    const undervalued = currentProperties.filter(p => p.price && p.price < lowerFence);
+    const overpriced = currentProperties.filter(p => p.price && p.price > upperFence);
+    
+    let html = '';
+    
+    if (undervalued.length > 0) {
+        const prop = undervalued[0];
+        html += `
+            <div class="outlier-card undervalued">
+                <div class="outlier-header">
+                    <div class="outlier-icon">💎</div>
+                    <div>
+                        <div class="outlier-title">Potential Bargain Detected!</div>
+                        <div class="outlier-subtitle">Statistically undervalued property</div>
+                    </div>
+                </div>
+                <div class="outlier-stats">
+                    <div class="outlier-stat">
+                        <span>Address:</span>
+                        <strong>${prop.address?.street || 'N/A'}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Listed Price:</span>
+                        <strong>$${formatNumber(prop.price)}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Market Median:</span>
+                        <strong>$${formatNumber(calculateMedian(prices))}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Below Market:</span>
+                        <strong style="color: #10b981;">${((1 - prop.price / mean) * 100).toFixed(1)}%</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Features:</span>
+                        <strong>${prop.attributes?.bedrooms || 0} bed, ${prop.attributes?.bathrooms || 0} bath</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (overpriced.length > 0) {
+        const prop = overpriced[0];
+        html += `
+            <div class="outlier-card overpriced">
+                <div class="outlier-header">
+                    <div class="outlier-icon">⚠️</div>
+                    <div>
+                        <div class="outlier-title">Premium Priced Property</div>
+                        <div class="outlier-subtitle">Above statistical market range</div>
+                    </div>
+                </div>
+                <div class="outlier-stats">
+                    <div class="outlier-stat">
+                        <span>Address:</span>
+                        <strong>${prop.address?.street || 'N/A'}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Listed Price:</span>
+                        <strong>$${formatNumber(prop.price)}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Market Median:</span>
+                        <strong>$${formatNumber(calculateMedian(prices))}</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Above Market:</span>
+                        <strong style="color: #ef4444;">+${((prop.price / mean - 1) * 100).toFixed(1)}%</strong>
+                    </div>
+                    <div class="outlier-stat">
+                        <span>Features:</span>
+                        <strong>${prop.attributes?.bedrooms || 0} bed, ${prop.attributes?.bathrooms || 0} bath</strong>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+    
+    if (html === '') {
+        html = '<p style="text-align: center; color: var(--text-light);">No statistical outliers detected. Market prices are relatively consistent.</p>';
+    }
+    
+    document.getElementById('outlierAnalysis').innerHTML = html;
+}
+
+// Generate ROI Projections
+function generateROIProjections() {
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    const avgPrice = calculateMean(prices);
+    const medianPrice = calculateMedian(prices);
+    
+    // Estimated rental yields (typical Australian market rates)
+    const grossYieldRate = 0.04; // 4% gross yield
+    const annualExpenses = avgPrice * 0.01; // 1% of property value for expenses
+    
+    // Calculate scenarios
+    const scenarios = [
+        {
+            name: 'Conservative',
+            capitalGrowth: 0.03, // 3% per year
+            years: 5,
+            description: 'Low growth scenario'
+        },
+        {
+            name: 'Moderate',
+            capitalGrowth: 0.05, // 5% per year
+            years: 5,
+            description: 'Historical average'
+        },
+        {
+            name: 'Optimistic',
+            capitalGrowth: 0.07, // 7% per year
+            years: 5,
+            description: 'Strong market conditions'
+        },
+        {
+            name: '10-Year Hold',
+            capitalGrowth: 0.05, // 5% per year
+            years: 10,
+            description: 'Long-term investment'
+        }
+    ];
+    
+    let html = '';
+    
+    scenarios.forEach(scenario => {
+        const futureValue = medianPrice * Math.pow(1 + scenario.capitalGrowth, scenario.years);
+        const capitalGain = futureValue - medianPrice;
+        const annualRentalIncome = medianPrice * grossYieldRate;
+        const netAnnualIncome = annualRentalIncome - annualExpenses;
+        const totalRentalIncome = netAnnualIncome * scenario.years;
+        const totalReturn = capitalGain + totalRentalIncome;
+        const roi = (totalReturn / medianPrice) * 100;
+        
+        html += `
+            <div class="roi-card">
+                <div class="roi-scenario">${scenario.name} Scenario</div>
+                <div class="roi-percentage">${roi.toFixed(1)}%</div>
+                <div class="roi-description">${scenario.description} - ${scenario.years} years</div>
+                <div class="roi-details">
+                    <div class="roi-detail-row">
+                        <span class="roi-detail-label">Initial Investment:</span>
+                        <span class="roi-detail-value">$${formatNumber(medianPrice)}</span>
+                    </div>
+                    <div class="roi-detail-row">
+                        <span class="roi-detail-label">Future Value:</span>
+                        <span class="roi-detail-value">$${formatNumber(futureValue)}</span>
+                    </div>
+                    <div class="roi-detail-row">
+                        <span class="roi-detail-label">Capital Gain:</span>
+                        <span class="roi-detail-value">$${formatNumber(capitalGain)}</span>
+                    </div>
+                    <div class="roi-detail-row">
+                        <span class="roi-detail-label">Rental Income:</span>
+                        <span class="roi-detail-value">$${formatNumber(totalRentalIncome)}</span>
+                    </div>
+                    <div class="roi-detail-row">
+                        <span class="roi-detail-label">Total Return:</span>
+                        <span class="roi-detail-value" style="color: var(--primary-color); font-weight: 700;">$${formatNumber(totalReturn)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('roiCalculator').innerHTML = html;
+}
+
+// Generate Top Investment Picks
+function generateTopPicks() {
+    const scoredProperties = currentProperties.map(prop => ({
+        ...prop,
+        investmentScore: calculateInvestmentScore(prop)
+    })).sort((a, b) => b.investmentScore.score - a.investmentScore.score);
+    
+    const topPicks = scoredProperties.slice(0, 3);
+    
+    let html = '';
+    
+    topPicks.forEach((prop, index) => {
+        const reasons = [];
+        const score = prop.investmentScore;
+        
+        if (score.factors.price >= 25) reasons.push('Great Price');
+        if (score.factors.land >= 15) reasons.push('Large Land');
+        if (score.factors.features >= 20) reasons.push('Excellent Features');
+        if (score.factors.recency >= 7) reasons.push('Recent Listing');
+        if (prop.property_type === 'House') reasons.push('Family Home');
+        
+        html += `
+            <div class="top-pick-card">
+                <div class="pick-rank">#${index + 1}</div>
+                <div class="pick-info">
+                    <h4>${prop.address?.street || 'Property Address'}</h4>
+                    <div style="color: var(--text-light); margin-bottom: 0.5rem;">
+                        ${prop.property_type || 'Property'} • $${formatNumber(prop.price)} • 
+                        ${prop.attributes?.bedrooms || 0} bed ${prop.attributes?.bathrooms || 0} bath
+                    </div>
+                    <div class="pick-reasons">
+                        ${reasons.map(reason => `<span class="reason-tag">${reason}</span>`).join('')}
+                    </div>
+                </div>
+                <div class="pick-score-container">
+                    <div class="pick-score">${score.score}</div>
+                    <div class="pick-score-label">Investment Score</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('topPicks').innerHTML = html;
 }
 
 // Statistical Analysis
