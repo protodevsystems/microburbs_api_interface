@@ -3192,6 +3192,8 @@ function switchPlaygroundFeature(featureName) {
         generateCalculator();
     } else if (featureName === 'comparison') {
         generateComparison();
+    } else if (featureName === 'battle') {
+        generateBattle();
     }
 }
 
@@ -4852,4 +4854,370 @@ function hideComparisonResults() {
 // Export Comparison
 function exportComparison() {
     alert('Export functionality coming soon! You will be able to export comparisons as PDF or share via link.');
+}
+
+// ===========================
+// PROPERTY BATTLE ROYALE
+// ===========================
+
+// Global Battle State
+let battleTournamentSize = 0;
+let battleSelectedProperties = [];
+let battleTournamentBracket = [];
+let battleCurrentRound = 0;
+let battleCurrentMatchup = 0;
+let battleWinners = [];
+
+// Generate Battle (called when switching to battle sub-tab)
+function generateBattle() {
+    console.log('Generating Battle Royale');
+    resetBattleState();
+    document.getElementById('battleSetup').style.display = 'block';
+    document.getElementById('battleArena').style.display = 'none';
+    document.getElementById('championCeremony').style.display = 'none';
+}
+
+// Reset Battle State
+function resetBattleState() {
+    battleTournamentSize = 0;
+    battleSelectedProperties = [];
+    battleTournamentBracket = [];
+    battleCurrentRound = 0;
+    battleCurrentMatchup = 0;
+    battleWinners = [];
+}
+
+// Select Tournament Size
+function selectTournamentSize(size) {
+    console.log('Selected tournament size:', size);
+    
+    if (!currentProperties || currentProperties.length < size) {
+        alert(`You need at least ${size} properties to run this tournament. Please search for more properties.`);
+        return;
+    }
+    
+    battleTournamentSize = size;
+    
+    // Update UI
+    document.querySelectorAll('.size-option-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    event.target.closest('.size-option-btn').classList.add('selected');
+    
+    // Show property selection
+    document.getElementById('propertySelectionForBattle').style.display = 'block';
+    document.getElementById('requiredPropertyCount').textContent = size;
+    document.getElementById('battleRequiredCount').textContent = size;
+    
+    // Reset selection
+    battleSelectedProperties = [];
+    updateBattlePropertyGrid();
+}
+
+// Update Battle Property Grid
+function updateBattlePropertyGrid() {
+    const grid = document.getElementById('battlePropertyGrid');
+    grid.innerHTML = '';
+    
+    currentProperties.forEach((property, index) => {
+        const isSelected = battleSelectedProperties.includes(index);
+        const isDisabled = !isSelected && battleSelectedProperties.length >= battleTournamentSize;
+        
+        const card = document.createElement('div');
+        card.className = `comparison-property-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`;
+        card.onclick = () => toggleBattlePropertySelection(index);
+        
+        const address = property.address?.street || property.area_name || `Property ${index + 1}`;
+        const price = formatCurrency(property.price);
+        const beds = property.attributes?.bedrooms || 'N/A';
+        const baths = property.attributes?.bathrooms || 'N/A';
+        
+        card.innerHTML = `
+            <div class="property-card-checkbox">
+                ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+            </div>
+            <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.5rem;">
+                ${price}
+            </div>
+            <div style="color: var(--text-primary); margin-bottom: 0.8rem; font-size: 0.95rem;">
+                ${address}
+            </div>
+            <div style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                <span><i class="fas fa-bed"></i> ${beds}</span>
+                <span><i class="fas fa-bath"></i> ${baths}</span>
+            </div>
+        `;
+        
+        grid.appendChild(card);
+    });
+    
+    // Update count and button
+    document.getElementById('battleSelectedCount').textContent = battleSelectedProperties.length;
+    const startBtn = document.querySelector('.btn-start-tournament');
+    startBtn.disabled = battleSelectedProperties.length !== battleTournamentSize;
+}
+
+// Toggle Battle Property Selection
+function toggleBattlePropertySelection(index) {
+    const selectedIndex = battleSelectedProperties.indexOf(index);
+    
+    if (selectedIndex > -1) {
+        battleSelectedProperties.splice(selectedIndex, 1);
+    } else {
+        if (battleSelectedProperties.length < battleTournamentSize) {
+            battleSelectedProperties.push(index);
+        }
+    }
+    
+    updateBattlePropertyGrid();
+}
+
+// Start Tournament
+function startTournament() {
+    console.log('Starting tournament with', battleSelectedProperties.length, 'properties');
+    
+    // Build initial bracket
+    battleTournamentBracket = battleSelectedProperties.map(i => ({
+        propertyIndex: i,
+        property: currentProperties[i],
+        wins: 0
+    }));
+    
+    // Shuffle for randomness
+    battleTournamentBracket = shuffleArray(battleTournamentBracket);
+    
+    // Initialize tournament
+    battleCurrentRound = 1;
+    battleCurrentMatchup = 0;
+    battleWinners = [];
+    
+    // Hide setup, show arena
+    document.getElementById('battleSetup').style.display = 'none';
+    document.getElementById('battleArena').style.display = 'block';
+    document.querySelector('.btn-restart-tournament').style.display = 'block';
+    
+    // Show first matchup
+    showCurrentMatchup();
+}
+
+// Shuffle Array
+function shuffleArray(array) {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+}
+
+// Show Current Matchup
+function showCurrentMatchup() {
+    const matchupIndex = battleCurrentMatchup * 2;
+    
+    if (matchupIndex >= battleTournamentBracket.length) {
+        // Round complete, advance winners
+        advanceToNextRound();
+        return;
+    }
+    
+    const property1 = battleTournamentBracket[matchupIndex];
+    const property2 = battleTournamentBracket[matchupIndex + 1];
+    
+    if (!property2) {
+        // Odd number, property1 gets a bye
+        battleWinners.push(property1);
+        battleCurrentMatchup++;
+        showCurrentMatchup();
+        return;
+    }
+    
+    // Update round info
+    const roundNames = ['Quarter-Finals', 'Semi-Finals', 'Finals'];
+    const roundName = battleTournamentSize === 8 ? roundNames[battleCurrentRound - 1] : 
+                     (battleCurrentRound === 1 ? 'Semi-Finals' : 'Finals');
+    document.getElementById('currentRoundBadge').textContent = roundName;
+    
+    const totalMatchups = Math.floor(battleTournamentBracket.length / 2);
+    document.getElementById('matchupProgress').textContent = `Matchup ${battleCurrentMatchup + 1} of ${totalMatchups}`;
+    
+    // Render matchup cards
+    renderMatchupCard('leftProperty', property1, 'left');
+    renderMatchupCard('rightProperty', property2, 'right');
+}
+
+// Render Matchup Card
+function renderMatchupCard(containerId, propertyData, side) {
+    const container = document.getElementById(containerId);
+    const property = propertyData.property;
+    
+    const address = property.address?.street || property.area_name || 'Property';
+    const price = formatCurrency(property.price);
+    const beds = property.attributes?.bedrooms || 'N/A';
+    const baths = property.attributes?.bathrooms || 'N/A';
+    const garage = property.attributes?.garage_spaces || 'N/A';
+    const landSize = property.attributes?.land_size || 'N/A';
+    
+    container.innerHTML = `
+        <div class="property-name">${address}</div>
+        <div class="property-price">${price}</div>
+        <div class="property-stats">
+            <div class="stat-item">
+                <i class="fas fa-bed"></i>
+                <span>${beds} Beds</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-bath"></i>
+                <span>${baths} Baths</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-car"></i>
+                <span>${garage} Garage</span>
+            </div>
+            <div class="stat-item">
+                <i class="fas fa-ruler-combined"></i>
+                <span>${landSize} m²</span>
+            </div>
+        </div>
+        <button class="btn-vote" onclick="voteForProperty('${side}')">
+            <i class="fas fa-hand-point-up"></i> Vote for This Property
+        </button>
+    `;
+}
+
+// Vote for Property
+function voteForProperty(side) {
+    const matchupIndex = battleCurrentMatchup * 2;
+    const winner = side === 'left' ? 
+        battleTournamentBracket[matchupIndex] : 
+        battleTournamentBracket[matchupIndex + 1];
+    
+    console.log('Voted for:', side, winner);
+    
+    // Increment wins
+    winner.wins++;
+    
+    // Add to winners array
+    battleWinners.push(winner);
+    
+    // Visual feedback
+    const winnerCard = document.getElementById(side === 'left' ? 'leftProperty' : 'rightProperty');
+    winnerCard.classList.add('selected');
+    
+    // Move to next matchup after delay
+    setTimeout(() => {
+        battleCurrentMatchup++;
+        showCurrentMatchup();
+    }, 800);
+}
+
+// Advance to Next Round
+function advanceToNextRound() {
+    if (battleWinners.length === 1) {
+        // We have a champion!
+        showChampion(battleWinners[0]);
+        return;
+    }
+    
+    // Setup next round
+    battleTournamentBracket = battleWinners;
+    battleWinners = [];
+    battleCurrentRound++;
+    battleCurrentMatchup = 0;
+    
+    // Show next matchup
+    showCurrentMatchup();
+}
+
+// Show Champion
+function showChampion(champion) {
+    console.log('Tournament Champion:', champion);
+    
+    const property = champion.property;
+    const address = property.address?.street || property.area_name || 'Champion Property';
+    const price = formatCurrency(property.price);
+    const beds = property.attributes?.bedrooms || 'N/A';
+    const baths = property.attributes?.bathrooms || 'N/A';
+    const garage = property.attributes?.garage_spaces || 'N/A';
+    
+    // Hide arena, show ceremony
+    document.getElementById('battleArena').style.display = 'none';
+    document.getElementById('championCeremony').style.display = 'block';
+    
+    // Populate champion details
+    document.getElementById('championProperty').innerHTML = `
+        <div class="property-name">${address}</div>
+        <div class="property-price">${price}</div>
+        <div class="property-details">
+            <span><i class="fas fa-bed"></i> ${beds}</span>
+            <span><i class="fas fa-bath"></i> ${baths}</span>
+            <span><i class="fas fa-car"></i> ${garage}</span>
+        </div>
+    `;
+    
+    // Show stats
+    document.getElementById('championWins').textContent = champion.wins;
+    document.getElementById('propertiesDefeated').textContent = battleTournamentSize - 1;
+    
+    // Create confetti
+    createConfetti();
+}
+
+// Create Confetti
+function createConfetti() {
+    const container = document.getElementById('confetti');
+    container.innerHTML = '';
+    
+    const colors = ['#fd7700', '#10b981', '#3b82f6', '#ef4444', '#f59e0b'];
+    
+    for (let i = 0; i < 50; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = Math.random() * 100 + '%';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 2 + 's';
+        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        container.appendChild(confetti);
+    }
+}
+
+// Restart Tournament
+function restartTournament() {
+    resetBattleState();
+    document.getElementById('battleSetup').style.display = 'block';
+    document.getElementById('battleArena').style.display = 'none';
+    document.getElementById('championCeremony').style.display = 'none';
+    document.querySelector('.btn-restart-tournament').style.display = 'none';
+    
+    // Reset size selection
+    document.querySelectorAll('.size-option-btn').forEach(btn => {
+        btn.classList.remove('selected');
+    });
+    document.getElementById('propertySelectionForBattle').style.display = 'none';
+}
+
+// Toggle Bracket View
+function toggleBracket() {
+    const bracket = document.getElementById('tournamentBracket');
+    const toggleText = document.getElementById('bracketToggleText');
+    
+    if (bracket.style.display === 'none') {
+        bracket.style.display = 'block';
+        toggleText.textContent = 'Hide Bracket';
+        // TODO: Build bracket visualization
+        bracket.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Bracket visualization coming soon!</p>';
+    } else {
+        bracket.style.display = 'none';
+        toggleText.textContent = 'Show Bracket';
+    }
+}
+
+// View Final Bracket
+function viewFinalBracket() {
+    // Hide ceremony, show arena with bracket
+    document.getElementById('championCeremony').style.display = 'none';
+    document.getElementById('battleArena').style.display = 'block';
+    
+    // Force show bracket
+    document.getElementById('tournamentBracket').style.display = 'block';
+    document.getElementById('bracketToggleText').textContent = 'Hide Bracket';
 }

@@ -431,6 +431,10 @@
                                 <i class="fas fa-balance-scale"></i>
                                 Property Comparison
                             </button>
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('battle')">
+                                <i class="fas fa-trophy"></i>
+                                Battle Royale
+                            </button>
                             <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
                                 <i class="fas fa-folder"></i>
                                 Portfolio
@@ -1105,6 +1109,132 @@
 
                         </div>
                         <!-- End Property Comparison Matrix Sub-Panel -->
+
+                        <!-- Property Battle Royale Sub-Panel -->
+                        <div id="battle-panel" class="playground-subpanel">
+                            
+                            <!-- Battle Header -->
+                            <div class="battle-header">
+                                <div class="battle-title">
+                                    <h2><i class="fas fa-trophy"></i> Property Battle Royale</h2>
+                                    <p class="battle-subtitle">Tournament-style elimination - let properties battle until one champion emerges!</p>
+                                </div>
+                                <div class="battle-actions">
+                                    <button class="btn-restart-tournament" onclick="restartTournament()" style="display: none;">
+                                        <i class="fas fa-redo"></i> New Tournament
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Tournament Setup -->
+                            <div id="battleSetup" class="battle-setup">
+                                <div class="setup-card">
+                                    <h3><i class="fas fa-users"></i> Setup Tournament</h3>
+                                    <p>Select how many properties you want in the tournament:</p>
+                                    
+                                    <div class="tournament-size-options">
+                                        <button class="size-option-btn" onclick="selectTournamentSize(4)" data-size="4">
+                                            <div class="size-number">4</div>
+                                            <div class="size-label">Properties</div>
+                                            <div class="size-rounds">2 Rounds</div>
+                                        </button>
+                                        <button class="size-option-btn" onclick="selectTournamentSize(8)" data-size="8">
+                                            <div class="size-number">8</div>
+                                            <div class="size-label">Properties</div>
+                                            <div class="size-rounds">3 Rounds</div>
+                                        </button>
+                                    </div>
+
+                                    <div id="propertySelectionForBattle" class="property-selection-for-battle" style="display: none;">
+                                        <h4>Select <span id="requiredPropertyCount">0</span> properties for the tournament:</h4>
+                                        <p class="selection-count">Selected: <span id="battleSelectedCount">0</span>/<span id="battleRequiredCount">0</span></p>
+                                        
+                                        <div id="battlePropertyGrid" class="battle-property-grid">
+                                            <!-- Properties populated here -->
+                                        </div>
+
+                                        <button class="btn-start-tournament" onclick="startTournament()" disabled>
+                                            <i class="fas fa-play"></i> Start Tournament
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tournament Arena -->
+                            <div id="battleArena" class="battle-arena" style="display: none;">
+                                
+                                <!-- Current Round Info -->
+                                <div class="round-info">
+                                    <div class="round-badge" id="currentRoundBadge">Round 1</div>
+                                    <div class="matchup-progress" id="matchupProgress">Matchup 1 of 4</div>
+                                </div>
+
+                                <!-- Head-to-Head Matchup -->
+                                <div class="matchup-container">
+                                    <div class="matchup-card left-property" id="leftProperty">
+                                        <!-- Left property populated here -->
+                                    </div>
+
+                                    <div class="vs-divider">
+                                        <div class="vs-circle">VS</div>
+                                        <div class="vs-text">Choose Your Winner!</div>
+                                    </div>
+
+                                    <div class="matchup-card right-property" id="rightProperty">
+                                        <!-- Right property populated here -->
+                                    </div>
+                                </div>
+
+                                <!-- Tournament Bracket (collapsible) -->
+                                <div class="bracket-section">
+                                    <button class="btn-toggle-bracket" onclick="toggleBracket()">
+                                        <i class="fas fa-sitemap"></i> <span id="bracketToggleText">Show Bracket</span>
+                                    </button>
+                                    <div id="tournamentBracket" class="tournament-bracket" style="display: none;">
+                                        <!-- Bracket visualization populated here -->
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- Champion Ceremony -->
+                            <div id="championCeremony" class="champion-ceremony" style="display: none;">
+                                <div class="confetti-container" id="confetti"></div>
+                                
+                                <div class="champion-content">
+                                    <div class="champion-icon">
+                                        <i class="fas fa-crown"></i>
+                                    </div>
+                                    <h2>🏆 Tournament Champion! 🏆</h2>
+                                    
+                                    <div class="champion-property" id="championProperty">
+                                        <!-- Champion details populated here -->
+                                    </div>
+
+                                    <div class="champion-stats">
+                                        <div class="stat-item">
+                                            <div class="stat-label">Matchups Won</div>
+                                            <div class="stat-value" id="championWins">0</div>
+                                        </div>
+                                        <div class="stat-item">
+                                            <div class="stat-label">Properties Defeated</div>
+                                            <div class="stat-value" id="propertiesDefeated">0</div>
+                                        </div>
+                                    </div>
+
+                                    <div class="champion-actions">
+                                        <button class="btn-new-tournament" onclick="restartTournament()">
+                                            <i class="fas fa-redo"></i> Start New Tournament
+                                        </button>
+                                        <button class="btn-view-bracket" onclick="viewFinalBracket()">
+                                            <i class="fas fa-sitemap"></i> View Full Bracket
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Property Battle Royale Sub-Panel -->
 
                     </div>
                 </div>

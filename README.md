@@ -442,6 +442,67 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Partners needing objective comparison
 - Anyone struggling to choose between properties
 
+##### 🏆 Property Battle Royale
+**Tournament-style elimination game** - let properties compete in head-to-head matchups until a champion emerges:
+
+**🎮 Tournament Setup:**
+- Choose between 4 or 8 property tournaments
+- Select properties from your search results
+- Randomized bracket generation
+- Clear visual tournament size indicators
+- Real-time selection counter
+
+**⚔️ Head-to-Head Matchups:**
+- Side-by-side property cards
+- Detailed stats for each property:
+  - Price, Bedrooms, Bathrooms
+  - Garage spaces, Land size
+- Animated VS circle between cards
+- Vote buttons for winner selection
+- Visual feedback on selection
+- Smooth transitions between matchups
+
+**🎯 Tournament Progression:**
+- Automatic round advancement
+- Progressive elimination format
+- Round badges (Semi-Finals, Finals, etc.)
+- Matchup counter (1 of 4, etc.)
+- Win tracking for each property
+- 800ms delay between rounds for drama
+
+**🏅 Champion Ceremony:**
+- Animated confetti celebration
+- Bouncing trophy icon
+- Champion property spotlight
+- Tournament statistics:
+  - Total matchups won
+  - Properties defeated
+- "New Tournament" and "View Bracket" buttons
+
+**✨ Features:**
+- Tournament bracket visualization (coming soon)
+- Collapsible bracket view
+- Restart tournament anytime
+- Shuffle algorithm for fairness
+- Responsive mobile design
+- Smooth animations throughout
+
+**🎯 Use Cases:**
+- Fun way to narrow down choices
+- Gamified property selection
+- Partner/family decision-making
+- Break analysis paralysis
+- Discover your true preferences
+- Interactive client presentations
+
+**💡 Perfect For:**
+- Buyers overwhelmed with options
+- Couples needing to agree on a property
+- Interactive family decision sessions
+- Real estate agents engaging clients
+- Anyone who likes gamified experiences
+- Making difficult choices fun
+
 ---
 
 ### 📊 Investment Intelligence Dashboard
@@ -696,6 +757,16 @@ Then navigate to `http://localhost:8000` in your browser.
    - Check radar chart to see property DNA
    - Read smart recommendations
    - Click **Clear All** to start over
+   
+   **🏆 Battle Royale:**
+   - Select tournament size (4 or 8 properties)
+   - Choose properties from your results
+   - Click **Start Tournament** button
+   - Vote in head-to-head matchups (LEFT vs RIGHT)
+   - Properties advance through rounds (Semi-Finals, Finals)
+   - Watch the champion ceremony with confetti 🎉
+   - View tournament bracket (coming soon)
+   - Click **New Tournament** to play again
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:
