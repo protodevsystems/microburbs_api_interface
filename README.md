@@ -160,6 +160,7 @@ The Playground features its own horizontal sub-navigation allowing you to switch
 - **💖 Property Tinder** - Swipe-based discovery
 - **📊 Timeline View** - Historical visualization  
 - **💰 Investment Calculator** - Comprehensive financial analysis
+- **⚖️ Property Comparison** - Side-by-side battle arena
 - **📁 Portfolio** - Coming Soon
 
 ---
@@ -374,6 +375,72 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Financial planners advising clients
 - Real estate agents helping buyers understand budgets
 - Anyone wanting to run numbers before committing
+
+---
+
+##### ⚖️ Property Comparison Matrix
+**Side-by-side property comparison tool** - pit 2-4 properties against each other in a battle arena:
+
+**🎯 Property Selection:**
+- Select 2-4 properties from search results
+- Interactive cards with checkboxes
+- Real-time selection counter (X/4)
+- Mini-cards showing selected properties
+- Easy removal with X button
+
+**🏆 Overall Winner:**
+- Automated scoring algorithm (0-100 points)
+- Winner banner with trophy animation
+- Score based on 5 key metrics:
+  - Price (lower is better)
+  - Space (more bedrooms)
+  - Value (price per bedroom)
+  - Land size (bigger is better)
+  - Freshness (newer listings)
+
+**📊 Comparison Table:**
+- Side-by-side metric comparison
+- Winner highlighting with 🏆 emoji
+- Sticky first column for scrolling
+- Metrics compared:
+  - Price, Bedrooms, Bathrooms, Garage
+  - Land Size, Building Size
+  - Property Type, Days on Market
+  - Overall Score
+
+**📈 Visual Charts:**
+- **Radar Chart (Property DNA)**: Shows strengths/weaknesses across 5 dimensions
+- **Bar Chart**: Price comparison at a glance
+- Color-coded for each property
+- Interactive Chart.js visualizations
+
+**💡 Smart Recommendations:**
+- **Best Value**: Lowest price per bedroom
+- **Most Spacious**: Maximum bedrooms/bathrooms
+- **Freshest Listing**: Newest on the market
+- **Top Pick**: Highest overall score
+
+**✨ Features:**
+- Multi-factor scoring algorithm
+- Automated winner detection per metric
+- Clear all and start over
+- Export functionality (coming soon)
+- Mobile responsive design
+
+**🎯 Use Cases:**
+- Compare shortlisted properties
+- Present options to partners/investors
+- Find the best value deal
+- Identify strengths and weaknesses
+- Make data-driven decisions
+- Client presentations
+
+**💡 Perfect For:**
+- Investors comparing opportunities
+- Buyers with multiple shortlisted options
+- Real estate agents helping clients decide
+- Partners needing objective comparison
+- Anyone struggling to choose between properties
 
 ---
 
@@ -620,6 +687,15 @@ Then navigate to `http://localhost:8000` in your browser.
    - All calculations update in real-time
    - Charts visualize your projections
    - Get personalized tips and recommendations
+   
+   **⚖️ Property Comparison:**
+   - Click properties to select (2-4 properties, max)
+   - Click **Start Comparison** button
+   - See overall winner with score
+   - Review side-by-side comparison table (🏆 marks winners)
+   - Check radar chart to see property DNA
+   - Read smart recommendations
+   - Click **Clear All** to start over
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:
