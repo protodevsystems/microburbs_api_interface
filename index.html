@@ -423,10 +423,9 @@
                                 <i class="fas fa-chart-line"></i>
                                 Timeline View
                             </button>
-                            <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('calculator')">
                                 <i class="fas fa-calculator"></i>
-                                Calculator
-                                <span style="font-size: 0.7em; opacity: 0.7;"> (Coming Soon)</span>
+                                Investment Calculator
                             </button>
                             <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
                                 <i class="fas fa-folder"></i>
@@ -615,6 +614,392 @@
 
                         </div>
                         <!-- End Timeline View Sub-Panel -->
+
+                        <!-- Investment Calculator Sub-Panel -->
+                        <div id="calculator-panel" class="playground-subpanel">
+                            
+                            <!-- Calculator Header -->
+                            <div class="calculator-header">
+                                <div class="calculator-title">
+                                    <h2><i class="fas fa-calculator"></i> Investment Calculator</h2>
+                                    <p class="calculator-subtitle">Calculate mortgage payments, ROI, cash flow, and affordability</p>
+                                </div>
+                            </div>
+
+                            <!-- Property Selector -->
+                            <div class="calculator-property-selector">
+                                <label for="calculatorPropertySelect">
+                                    <i class="fas fa-home"></i> Select a property to analyze:
+                                </label>
+                                <select id="calculatorPropertySelect" onchange="loadPropertyToCalculator()">
+                                    <option value="">-- Choose a property --</option>
+                                </select>
+                                <button class="btn-custom-property" onclick="enableCustomProperty()">
+                                    <i class="fas fa-edit"></i> Enter Custom Values
+                                </button>
+                            </div>
+
+                            <!-- Calculator Tabs -->
+                            <div class="calculator-tabs">
+                                <button class="calculator-tab-btn active" onclick="switchCalculatorMode('mortgage')">
+                                    <i class="fas fa-home-lg-alt"></i>
+                                    Mortgage Calculator
+                                </button>
+                                <button class="calculator-tab-btn" onclick="switchCalculatorMode('roi')">
+                                    <i class="fas fa-chart-line"></i>
+                                    ROI Scenarios
+                                </button>
+                                <button class="calculator-tab-btn" onclick="switchCalculatorMode('cashflow')">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                    Cash Flow
+                                </button>
+                                <button class="calculator-tab-btn" onclick="switchCalculatorMode('affordability')">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                    Affordability
+                                </button>
+                            </div>
+
+                            <!-- Mortgage Calculator Mode -->
+                            <div id="mortgage-mode" class="calculator-mode active">
+                                <div class="calculator-grid">
+                                    <!-- Left: Inputs -->
+                                    <div class="calculator-inputs">
+                                        <h3>Loan Details</h3>
+                                        
+                                        <div class="calculator-input-group">
+                                            <label>Property Price</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="mortgagePrice" value="1000000" min="0" step="10000" oninput="calculateMortgage()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Deposit (%)</label>
+                                            <input type="range" id="mortgageDeposit" value="20" min="5" max="50" step="5" oninput="updateDepositDisplay(); calculateMortgage()">
+                                            <div class="range-display">
+                                                <span id="depositPercentDisplay">20%</span>
+                                                <span id="depositAmountDisplay">$200,000</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Interest Rate (%)</label>
+                                            <input type="range" id="mortgageRate" value="6.5" min="2" max="12" step="0.1" oninput="updateRateDisplay(); calculateMortgage()">
+                                            <div class="range-display">
+                                                <span id="rateDisplay">6.5%</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Loan Term (years)</label>
+                                            <input type="range" id="mortgageTerm" value="30" min="5" max="30" step="5" oninput="updateTermDisplay(); calculateMortgage()">
+                                            <div class="range-display">
+                                                <span id="termDisplay">30 years</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Right: Results -->
+                                    <div class="calculator-results">
+                                        <h3>Monthly Breakdown</h3>
+                                        
+                                        <div class="result-card highlight">
+                                            <div class="result-label">Monthly Payment</div>
+                                            <div class="result-value" id="monthlyPayment">$0</div>
+                                        </div>
+
+                                        <div class="result-grid">
+                                            <div class="result-card">
+                                                <div class="result-label">Loan Amount</div>
+                                                <div class="result-value" id="loanAmount">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Total Interest</div>
+                                                <div class="result-value" id="totalInterest">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Total Repayment</div>
+                                                <div class="result-value" id="totalRepayment">$0</div>
+                                            </div>
+                                        </div>
+
+                                        <canvas id="mortgageChart" style="margin-top: 2rem; height: 250px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ROI Scenarios Mode -->
+                            <div id="roi-mode" class="calculator-mode">
+                                <div class="roi-container">
+                                    <div class="calculator-inputs">
+                                        <h3>Investment Parameters</h3>
+                                        
+                                        <div class="calculator-input-group">
+                                            <label>Purchase Price</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="roiPrice" value="1000000" min="0" step="10000" oninput="calculateROI()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Annual Appreciation (%)</label>
+                                            <input type="range" id="roiAppreciation" value="5" min="0" max="15" step="0.5" oninput="updateAppreciationDisplay(); calculateROI()">
+                                            <div class="range-display">
+                                                <span id="appreciationDisplay">5%</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Annual Rental Yield (%)</label>
+                                            <input type="range" id="roiYield" value="4" min="0" max="10" step="0.5" oninput="updateYieldDisplay(); calculateROI()">
+                                            <div class="range-display">
+                                                <span id="yieldDisplay">4%</span>
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Investment Timeframe (years)</label>
+                                            <input type="range" id="roiTimeframe" value="10" min="1" max="30" step="1" oninput="updateTimeframeDisplay(); calculateROI()">
+                                            <div class="range-display">
+                                                <span id="timeframeDisplay">10 years</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="roi-results">
+                                        <h3>Projected Returns</h3>
+                                        <div class="scenario-comparison">
+                                            <div class="scenario-card best">
+                                                <div class="scenario-header">
+                                                    <i class="fas fa-chart-line"></i>
+                                                    <span>Optimistic</span>
+                                                </div>
+                                                <div class="scenario-value" id="roiOptimistic">$0</div>
+                                                <div class="scenario-roi" id="roiOptimisticPercent">0%</div>
+                                                <div class="scenario-detail">High growth market</div>
+                                            </div>
+
+                                            <div class="scenario-card moderate">
+                                                <div class="scenario-header">
+                                                    <i class="fas fa-balance-scale"></i>
+                                                    <span>Realistic</span>
+                                                </div>
+                                                <div class="scenario-value" id="roiRealistic">$0</div>
+                                                <div class="scenario-roi" id="roiRealisticPercent">0%</div>
+                                                <div class="scenario-detail">Expected market conditions</div>
+                                            </div>
+
+                                            <div class="scenario-card conservative">
+                                                <div class="scenario-header">
+                                                    <i class="fas fa-shield-alt"></i>
+                                                    <span>Conservative</span>
+                                                </div>
+                                                <div class="scenario-value" id="roiConservative">$0</div>
+                                                <div class="scenario-roi" id="roiConservativePercent">0%</div>
+                                                <div class="scenario-detail">Slow market growth</div>
+                                            </div>
+                                        </div>
+
+                                        <canvas id="roiChart" style="margin-top: 2rem; height: 300px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cash Flow Mode -->
+                            <div id="cashflow-mode" class="calculator-mode">
+                                <div class="calculator-grid">
+                                    <div class="calculator-inputs">
+                                        <h3>Income & Expenses</h3>
+                                        
+                                        <div class="cashflow-section">
+                                            <h4><i class="fas fa-arrow-down" style="color: #10b981;"></i> Income</h4>
+                                            <div class="calculator-input-group">
+                                                <label>Weekly Rent</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="weeklyRent" value="800" min="0" step="10" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="cashflow-section">
+                                            <h4><i class="fas fa-arrow-up" style="color: #ef4444;"></i> Expenses</h4>
+                                            <div class="calculator-input-group">
+                                                <label>Mortgage Payment (monthly)</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="mortgagePayment" value="5000" min="0" step="100" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+
+                                            <div class="calculator-input-group">
+                                                <label>Council Rates (annual)</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="councilRates" value="2500" min="0" step="100" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+
+                                            <div class="calculator-input-group">
+                                                <label>Strata/Body Corp (quarterly)</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="strataFees" value="0" min="0" step="100" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+
+                                            <div class="calculator-input-group">
+                                                <label>Insurance (annual)</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="insurance" value="1200" min="0" step="100" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+
+                                            <div class="calculator-input-group">
+                                                <label>Maintenance (annual)</label>
+                                                <div class="input-with-icon">
+                                                    <span class="input-icon">$</span>
+                                                    <input type="number" id="maintenance" value="2000" min="0" step="100" oninput="calculateCashFlow()">
+                                                </div>
+                                            </div>
+
+                                            <div class="calculator-input-group">
+                                                <label>Property Management (%)</label>
+                                                <input type="range" id="managementFee" value="7" min="0" max="15" step="0.5" oninput="updateManagementDisplay(); calculateCashFlow()">
+                                                <div class="range-display">
+                                                    <span id="managementDisplay">7%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="calculator-results">
+                                        <h3>Cash Flow Analysis</h3>
+                                        
+                                        <div class="result-card highlight">
+                                            <div class="result-label">Net Cash Flow (Weekly)</div>
+                                            <div class="result-value" id="weeklyCashFlow">$0</div>
+                                        </div>
+
+                                        <div class="result-grid">
+                                            <div class="result-card">
+                                                <div class="result-label">Annual Income</div>
+                                                <div class="result-value positive" id="annualIncome">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Annual Expenses</div>
+                                                <div class="result-value negative" id="annualExpenses">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Net Annual</div>
+                                                <div class="result-value" id="annualCashFlow">$0</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="cashflow-status" id="cashflowStatus">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span>Calculate to see if this is cashflow positive</span>
+                                        </div>
+
+                                        <canvas id="cashflowChart" style="margin-top: 2rem; height: 250px;"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Affordability Mode -->
+                            <div id="affordability-mode" class="calculator-mode">
+                                <div class="calculator-grid">
+                                    <div class="calculator-inputs">
+                                        <h3>Your Financial Situation</h3>
+                                        
+                                        <div class="calculator-input-group">
+                                            <label>Annual Household Income</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="householdIncome" value="150000" min="0" step="5000" oninput="calculateAffordability()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Available Deposit</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="availableDeposit" value="200000" min="0" step="10000" oninput="calculateAffordability()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Monthly Expenses</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="monthlyExpenses" value="4000" min="0" step="500" oninput="calculateAffordability()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Other Debts (monthly)</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="monthlyDebts" value="0" min="0" step="100" oninput="calculateAffordability()">
+                                            </div>
+                                        </div>
+
+                                        <div class="calculator-input-group">
+                                            <label>Property Price Target</label>
+                                            <div class="input-with-icon">
+                                                <span class="input-icon">$</span>
+                                                <input type="number" id="targetPrice" value="1000000" min="0" step="10000" oninput="calculateAffordability()">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="calculator-results">
+                                        <h3>Affordability Assessment</h3>
+                                        
+                                        <div class="affordability-verdict" id="affordabilityVerdict">
+                                            <div class="verdict-icon">
+                                                <i class="fas fa-question-circle"></i>
+                                            </div>
+                                            <div class="verdict-text">
+                                                <h4>Calculate to see if you can afford this</h4>
+                                                <p>We'll assess based on lending criteria</p>
+                                            </div>
+                                        </div>
+
+                                        <div class="result-grid">
+                                            <div class="result-card">
+                                                <div class="result-label">Max Borrowing Capacity</div>
+                                                <div class="result-value" id="maxBorrowing">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Max Property Price</div>
+                                                <div class="result-value" id="maxProperty">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Monthly Commitment</div>
+                                                <div class="result-value" id="monthlyCommitment">$0</div>
+                                            </div>
+                                            <div class="result-card">
+                                                <div class="result-label">Debt-to-Income Ratio</div>
+                                                <div class="result-value" id="debtToIncome">0%</div>
+                                            </div>
+                                        </div>
+
+                                        <div class="affordability-tips">
+                                            <h4><i class="fas fa-lightbulb"></i> Tips to Improve Affordability</h4>
+                                            <ul id="affordabilityTips">
+                                                <li>Calculate your financial position to see personalized tips</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Investment Calculator Sub-Panel -->
 
                     </div>
                 </div>
