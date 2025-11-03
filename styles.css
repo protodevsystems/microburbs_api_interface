@@ -5159,9 +5159,9 @@ canvas {
 }
 
 .orientation-badge.north {
-    background: rgba(234, 179, 8, 0.2);
-    color: #fde047;
-    border: 2px solid #fde047;
+    background: rgba(234, 179, 8, 0.3);
+    color: #854d0e;
+    border: 2px solid #ca8a04;
 }
 
 .orientation-badge.south {
@@ -5333,9 +5333,9 @@ canvas {
 }
 
 .legend-badge.north {
-    background: rgba(234, 179, 8, 0.2);
-    color: #fde047;
-    border: 3px solid #fde047;
+    background: rgba(234, 179, 8, 0.3);
+    color: #854d0e;
+    border: 3px solid #ca8a04;
 }
 
 .legend-badge.south {
