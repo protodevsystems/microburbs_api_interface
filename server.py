@@ -121,6 +121,12 @@ def analyze_orientation():
         address (str): Property address for context
     """
     try:
+        # Check if API key is set
+        if not OPENAI_API_KEY:
+            error_msg = "OpenAI API key is not configured. Set OPENAI_API_KEY environment variable."
+            print(f"[Server] ERROR: {error_msg}")
+            return jsonify({"success": False, "error": error_msg}), 500
+        
         data = request.get_json()
         latitude = data.get('latitude')
         longitude = data.get('longitude')
@@ -128,6 +134,7 @@ def analyze_orientation():
         
         print(f"[Server] AI Orientation Analysis requested for: {address}")
         print(f"[Server] Coordinates: {latitude}, {longitude}")
+        print(f"[Server] API Key present: {bool(OPENAI_API_KEY)}")
         
         if not latitude or not longitude:
             return jsonify({"error": "Latitude and longitude are required"}), 400
@@ -154,13 +161,19 @@ def analyze_orientation():
         # image_url += f"&key={GOOGLE_MAPS_API_KEY}"
         
         print(f"[Server] Fetching satellite image from Google Maps...")
+        print(f"[Server] Image URL: {image_url}")
         
         # Fetch the satellite image
-        image_response = requests.get(image_url, timeout=10)
-        
-        if image_response.status_code != 200:
-            print(f"[Server] Failed to fetch image: {image_response.status_code}")
-            return jsonify({"error": "Failed to fetch satellite image"}), 500
+        try:
+            image_response = requests.get(image_url, timeout=10)
+            
+            if image_response.status_code != 200:
+                print(f"[Server] Failed to fetch image: {image_response.status_code}")
+                print(f"[Server] Response content: {image_response.text[:200]}")
+                return jsonify({"success": False, "error": f"Failed to fetch satellite image: HTTP {image_response.status_code}"}), 500
+        except Exception as e:
+            print(f"[Server] Error fetching image: {str(e)}")
+            return jsonify({"success": False, "error": f"Error fetching image: {str(e)}"}), 500
         
         # Convert image to base64
         image_base64 = base64.b64encode(image_response.content).decode('utf-8')
@@ -225,17 +238,28 @@ Return ONLY valid JSON, no other text."""
         }
         
         # Call OpenAI API
-        openai_response = requests.post(
-            OPENAI_API_URL,
-            headers=openai_headers,
-            json=openai_payload,
-            timeout=30
-        )
-        
-        if openai_response.status_code != 200:
-            print(f"[Server] OpenAI API error: {openai_response.status_code}")
-            print(f"[Server] Response: {openai_response.text}")
-            return jsonify({"error": "Failed to analyze image with AI"}), 500
+        try:
+            openai_response = requests.post(
+                OPENAI_API_URL,
+                headers=openai_headers,
+                json=openai_payload,
+                timeout=30
+            )
+            
+            if openai_response.status_code != 200:
+                print(f"[Server] OpenAI API error: {openai_response.status_code}")
+                print(f"[Server] Response: {openai_response.text}")
+                return jsonify({
+                    "success": False,
+                    "error": f"OpenAI API error: HTTP {openai_response.status_code}",
+                    "details": openai_response.text[:500]
+                }), 500
+        except requests.exceptions.Timeout:
+            print(f"[Server] OpenAI API timeout")
+            return jsonify({"success": False, "error": "OpenAI API request timed out"}), 500
+        except Exception as e:
+            print(f"[Server] Error calling OpenAI API: {str(e)}")
+            return jsonify({"success": False, "error": f"Error calling OpenAI API: {str(e)}"}), 500
         
         # Parse GPT-4o response
         ai_result = openai_response.json()
