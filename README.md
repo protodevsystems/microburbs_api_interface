@@ -159,7 +159,7 @@ Interactive mapping with advanced geospatial features powered by Leaflet.js + Op
 The Playground features its own horizontal sub-navigation allowing you to switch between:
 - **💖 Property Tinder** - Swipe-based discovery
 - **📊 Timeline View** - Historical visualization  
-- **💰 Calculator** - Coming Soon
+- **💰 Investment Calculator** - Comprehensive financial analysis
 - **📁 Portfolio** - Coming Soon
 
 ---
@@ -277,6 +277,105 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Understanding seasonal patterns
 - Client presentations showing market dynamics
 - Investment timing decisions
+
+---
+
+##### 💰 Investment Calculator
+**Comprehensive financial calculators for property investment analysis** - make informed decisions with real numbers:
+
+**🏦 Mortgage Calculator:**
+- **Loan parameters**: Property price, deposit %, interest rate, loan term
+- **Interactive sliders**: Adjust deposit (5-50%), rate (2-12%), term (5-30 years)
+- **Live calculations**:
+  - Monthly mortgage payment
+  - Total loan amount
+  - Total interest over life of loan
+  - Total repayment amount
+- **Visual breakdown**: Doughnut chart showing principal vs interest vs deposit
+- **Instant updates**: All calculations update in real-time as you adjust sliders
+
+**📈 ROI Scenarios:**
+- **Investment parameters**: Purchase price, appreciation rate, rental yield, timeframe
+- **Three scenarios**:
+  - **Optimistic** (30% above baseline): High growth market
+  - **Realistic** (baseline): Expected market conditions
+  - **Conservative** (30% below baseline): Slow market growth
+- **Projections**:
+  - Future property value
+  - Total rental income
+  - Total return on investment
+  - ROI percentage
+- **Interactive chart**: Line graph showing property value projection over time for all three scenarios
+- **Adjustable timeframes**: 1-30 years
+
+**💵 Cash Flow Analysis:**
+- **Income inputs**:
+  - Weekly rent amount
+- **Expense inputs**:
+  - Monthly mortgage payment
+  - Annual council rates
+  - Quarterly strata/body corp fees
+  - Annual insurance
+  - Annual maintenance budget
+  - Property management fee (%)
+- **Calculations**:
+  - Annual income and expenses
+  - Net annual cash flow
+  - Weekly cash flow (positive/negative)
+- **Visual feedback**:
+  - ✅ **Cashflow Positive**: Green indicator
+  - ⚠️ **Cashflow Negative**: Red indicator with weekly shortfall amount
+  - Bar chart showing income vs all expense categories
+- **Investment decision**: Instantly see if property generates income or requires topping up
+
+**🏠 Affordability Assessment:**
+- **Your financial situation**:
+  - Annual household income
+  - Available deposit amount
+  - Monthly living expenses
+  - Other monthly debts
+  - Target property price
+- **Borrowing capacity calculation** based on simplified lending criteria:
+  - Max borrowing capacity
+  - Max affordable property price
+  - Required monthly commitment
+  - Debt-to-income ratio
+- **Three possible verdicts**:
+  - ✅ **Can Comfortably Afford**: Property well within budget (green)
+  - ⚠️ **Marginal - Proceed with Caution**: At upper limit of capacity (orange)
+  - ❌ **Currently Out of Reach**: Shows shortfall amount (red)
+- **Personalized tips**: Actionable advice to improve affordability:
+  - Deposit saving targets
+  - Debt reduction suggestions
+  - Alternative price range recommendations
+  - First home buyer grant information
+
+**🎯 Smart Features:**
+- **Property dropdown**: Load any property from search results
+- **Custom values**: Enter your own property details
+- **Real-time calculations**: Instant updates as you adjust sliders
+- **Chart.js visualizations**: Professional, interactive charts
+- **Australian formatting**: Currency and date formats
+- **Mobile responsive**: Works perfectly on all devices
+
+**✨ Use Cases:**
+- Compare mortgage options (different deposits, rates, terms)
+- Stress test investments with optimistic/conservative scenarios
+- Determine if rental income covers expenses (cashflow positive)
+- Calculate exact borrowing capacity before talking to banks
+- Get personalized affordability verdict
+- Present financial scenarios to partners/investors
+- Plan deposit targets based on purchase price
+
+**💡 Perfect For:**
+- First home buyers checking affordability
+- Investors analyzing cash flow potential
+- Property buyers comparing loan scenarios
+- Financial planners advising clients
+- Real estate agents helping buyers understand budgets
+- Anyone wanting to run numbers before committing
+
+---
 
 ### 📊 Investment Intelligence Dashboard
 - **Comprehensive investor metrics** organized in 4 key categories:
@@ -511,6 +610,16 @@ Then navigate to `http://localhost:8000` in your browser.
    - Sort by date or price
    - See "days on market" for each property
    - Understand market activity patterns
+   
+   **💰 Investment Calculator:**
+   - Select a property from dropdown or enter custom values
+   - **Mortgage tab**: Adjust loan parameters with sliders
+   - **ROI tab**: Set growth assumptions, see 3 scenarios
+   - **Cash Flow tab**: Enter income/expenses, check if cashflow positive
+   - **Affordability tab**: Input your finances, get instant verdict
+   - All calculations update in real-time
+   - Charts visualize your projections
+   - Get personalized tips and recommendations
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:
