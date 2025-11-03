@@ -20,7 +20,40 @@ A professional-grade web application that delivers comprehensive property data a
 - Professional layout for real estate agents and investors
 
 #### 🔬 Technical Insights Tab (Data Science View)
-Advanced analytics for data-driven decision making:
+Advanced analytics for data-driven decision making with **WOW factor** features:
+
+**🎯 Investment-Focused Analytics:**
+- **Investment Opportunity Scores**: AI-like 100-point scoring system
+  - Multi-factor analysis: price competitiveness (30pts), land size (20pts), features (25pts), property type (15pts), listing recency (10pts)
+  - Visual progress bars showing score breakdown
+  - TOP 3 badges highlighting best opportunities
+  - Animated hover effects on opportunity cards
+  
+- **Value per Square Meter Analysis**: Find the best deals
+  - Interactive scatter plot with color-coded points (🟢 Best Value, 🔴 Expensive)
+  - Hover tooltips with detailed property information
+  - Best/worst value metrics with highlights
+  - Value spread percentage calculation
+  
+- **Outlier Detection & Opportunities**: Statistical bargain finder
+  - 💎 **Undervalued Gems**: Properties below statistical lower fence (IQR method)
+  - ⚠️ **Premium Priced**: Properties above statistical upper fence
+  - Below/above market percentage calculations
+  - Professional green/red color-coded cards
+  
+- **ROI Projection Calculator**: Real investment returns
+  - **4 Scenarios**: Conservative (3%/5yr), Moderate (5%/5yr), Optimistic (7%/5yr), 10-Year (5%/10yr)
+  - Capital growth + rental income projections
+  - Detailed breakdown: initial investment, future value, capital gains, rental income, total return
+  - Based on Australian market rates (4% gross yield)
+  
+- **Top Investment Picks**: Data-driven recommendations
+  - Top 3 properties ranked by comprehensive scoring
+  - Reason tags (Great Price, Large Land, Excellent Features, Recent Listing, Family Home)
+  - Large investment scores with orange gradient styling
+  - Professional horizontal card layout with #1, #2, #3 ranks
+
+**📊 Statistical & Market Analysis:**
 - **Statistical Analysis**: 12+ statistical metrics including:
   - Sample size, mean, median, standard deviation
   - Quartiles (Q1, Q3), IQR, coefficient of variation
