@@ -2325,22 +2325,24 @@ canvas {
     transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     border: 2px solid rgba(255, 255, 255, 0.1);
     pointer-events: none;
-}
-
-.swipe-card:first-child {
-    pointer-events: auto;
-}
-
-.swipe-card:not(:first-child) {
     opacity: 0;
-    pointer-events: none;
 }
 
-.swipe-card:nth-child(2) {
+/* Top card (last in DOM) - fully interactive and visible */
+.swipe-card:last-child {
+    pointer-events: auto;
     opacity: 1;
+    z-index: 100;
 }
 
-.swipe-card:nth-child(n+3) .swipe-card-content {
+/* Second card (second-to-last) - visible behind but not interactive */
+.swipe-card:nth-last-child(2) {
+    opacity: 1;
+    z-index: 99;
+}
+
+/* Hide content on 3rd+ cards from the top */
+.swipe-card:nth-last-child(n+3) .swipe-card-content {
     display: none;
 }
 
