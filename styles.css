@@ -3844,6 +3844,476 @@ canvas {
     margin-bottom: 0.5rem;
 }
 
+/* ===========================
+   PROPERTY COMPARISON MATRIX
+   =========================== */
+
+.comparison-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(253, 119, 0, 0.05), rgba(253, 119, 0, 0.02));
+    border-radius: 16px;
+    border: 1px solid rgba(253, 119, 0, 0.1);
+}
+
+.comparison-title h2 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.comparison-title h2 i {
+    color: var(--accent-color);
+}
+
+.comparison-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.comparison-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn-clear-comparison,
+.btn-export-comparison {
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-clear-comparison {
+    background: rgba(239, 68, 68, 0.1);
+    border: 2px solid #ef4444;
+    color: #ef4444;
+}
+
+.btn-clear-comparison:hover {
+    background: #ef4444;
+    color: #000000;
+}
+
+.btn-export-comparison {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #10b981;
+    color: #10b981;
+}
+
+.btn-export-comparison:hover {
+    background: #10b981;
+    color: #000000;
+}
+
+/* Property Selection */
+.comparison-selection {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.comparison-selection h3 {
+    font-size: 1.3rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comparison-selection h3 i {
+    color: var(--accent-color);
+}
+
+.selection-hint {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    margin: 0 0 1.5rem 0;
+}
+
+.comparison-property-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+.comparison-property-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+}
+
+.comparison-property-card:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(253, 119, 0, 0.2);
+}
+
+.comparison-property-card.selected {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.comparison-property-card.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.property-card-checkbox {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.comparison-property-card.selected .property-card-checkbox {
+    background: #10b981;
+    border-color: #10b981;
+}
+
+.property-card-checkbox i {
+    color: #ffffff;
+    font-size: 14px;
+}
+
+.comparison-placeholder {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-secondary);
+}
+
+.comparison-placeholder i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    color: var(--accent-color);
+    opacity: 0.5;
+}
+
+/* Selected Properties Container */
+.selected-properties-container {
+    background: var(--card-background);
+    border: 2px solid var(--accent-color);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.selected-properties-container h3 {
+    font-size: 1.3rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.selected-properties-container h3 i {
+    color: #10b981;
+}
+
+.selected-properties-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.selected-property-mini-card {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #10b981;
+    border-radius: 8px;
+    padding: 1rem;
+    position: relative;
+}
+
+.selected-property-mini-card .property-mini-price {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    margin-bottom: 0.3rem;
+}
+
+.selected-property-mini-card .property-mini-address {
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.btn-remove-selected {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 24px;
+    height: 24px;
+    background: rgba(239, 68, 68, 0.9);
+    border: none;
+    border-radius: 50%;
+    color: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+.btn-remove-selected:hover {
+    background: #ef4444;
+    transform: scale(1.1);
+}
+
+.btn-start-comparison {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 8px;
+    color: #000000;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+}
+
+.btn-start-comparison:hover {
+    background: #ff8800;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(253, 119, 0, 0.4);
+}
+
+/* Comparison Results */
+.comparison-results {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Winner Banner */
+.winner-banner {
+    background: linear-gradient(135deg, rgba(253, 119, 0, 0.2), rgba(253, 119, 0, 0.05));
+    border: 2px solid var(--accent-color);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.winner-icon {
+    font-size: 4rem;
+    color: var(--accent-color);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+
+.winner-content h3 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+    color: var(--text-primary);
+}
+
+.winner-property {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.winner-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+.winner-score {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+}
+
+.winner-score span {
+    font-weight: 700;
+    color: #10b981;
+}
+
+/* Comparison Table */
+.comparison-table-container {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+}
+
+.comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.comparison-table th {
+    background: rgba(253, 119, 0, 0.1);
+    padding: 1rem;
+    text-align: left;
+    color: var(--text-primary);
+    font-weight: 700;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+.comparison-table th.metric-column {
+    background: rgba(253, 119, 0, 0.2);
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.comparison-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+}
+
+.comparison-table td.metric-column {
+    font-weight: 600;
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.02);
+    position: sticky;
+    left: 0;
+    z-index: 10;
+}
+
+.comparison-table td.winner {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+    font-weight: 700;
+}
+
+.comparison-table td.winner::after {
+    content: " 🏆";
+}
+
+/* Comparison Charts */
+.comparison-charts {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.comparison-chart-card {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.comparison-chart-card h4 {
+    font-size: 1.2rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comparison-chart-card h4 i {
+    color: var(--accent-color);
+}
+
+/* Recommendations */
+.comparison-recommendations {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.comparison-recommendations h3 {
+    font-size: 1.5rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.comparison-recommendations h3 i {
+    color: var(--accent-color);
+}
+
+.recommendations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.recommendation-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    transition: all 0.3s;
+}
+
+.recommendation-card:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+}
+
+.recommendation-card .rec-badge {
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    background: var(--accent-color);
+    color: #000000;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.recommendation-card .rec-property {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.recommendation-card .rec-reason {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-links {
@@ -4000,5 +4470,48 @@ canvas {
     .btn-custom-property {
         width: 100%;
         justify-content: center;
+    }
+    
+    /* Comparison Responsive */
+    .comparison-header {
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    
+    .comparison-actions {
+        width: 100%;
+        flex-direction: column;
+    }
+    
+    .btn-clear-comparison,
+    .btn-export-comparison {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .comparison-property-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .selected-properties-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .comparison-charts {
+        grid-template-columns: 1fr;
+    }
+    
+    .comparison-table-container {
+        overflow-x: scroll;
+    }
+    
+    .winner-banner {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .winner-property {
+        flex-direction: column;
+        gap: 0.5rem;
     }
 }

@@ -3190,6 +3190,8 @@ function switchPlaygroundFeature(featureName) {
         generateTimeline();
     } else if (featureName === 'calculator') {
         generateCalculator();
+    } else if (featureName === 'comparison') {
+        generateComparison();
     }
 }
 
@@ -4282,4 +4284,572 @@ function formatCurrency(amount) {
         return '$0';
     }
     return '$' + Math.round(amount).toLocaleString('en-AU');
+}
+
+// ===========================
+// PROPERTY COMPARISON MATRIX
+// ===========================
+
+// Global Comparison State
+let selectedPropertiesForComparison = [];
+let radarChart = null;
+let priceBarChart = null;
+
+// Generate Comparison (called when switching to comparison sub-tab)
+function generateComparison() {
+    console.log('Generating comparison matrix');
+    
+    selectedPropertiesForComparison = [];
+    updateComparisonPropertyGrid();
+    hideComparisonResults();
+}
+
+// Update Property Grid for Selection
+function updateComparisonPropertyGrid() {
+    const grid = document.getElementById('comparisonPropertyGrid');
+    
+    if (!currentProperties || currentProperties.length === 0) {
+        grid.innerHTML = `
+            <div class="comparison-placeholder">
+                <i class="fas fa-search"></i>
+                <p>Search for properties to start comparing</p>
+            </div>
+        `;
+        return;
+    }
+    
+    grid.innerHTML = '';
+    
+    currentProperties.forEach((property, index) => {
+        const isSelected = selectedPropertiesForComparison.includes(index);
+        const isDisabled = !isSelected && selectedPropertiesForComparison.length >= 4;
+        
+        const card = document.createElement('div');
+        card.className = `comparison-property-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`;
+        card.onclick = () => togglePropertySelection(index);
+        
+        const address = property.address?.street || property.area_name || `Property ${index + 1}`;
+        const price = formatCurrency(property.price);
+        const beds = property.attributes?.bedrooms || 'N/A';
+        const baths = property.attributes?.bathrooms || 'N/A';
+        
+        card.innerHTML = `
+            <div class="property-card-checkbox">
+                ${isSelected ? '<i class="fas fa-check"></i>' : ''}
+            </div>
+            <div class="property-card-price" style="font-size: 1.3rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.5rem;">
+                ${price}
+            </div>
+            <div class="property-card-address" style="color: var(--text-primary); margin-bottom: 0.8rem; font-size: 0.95rem;">
+                ${address}
+            </div>
+            <div class="property-card-details" style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
+                <span><i class="fas fa-bed"></i> ${beds}</span>
+                <span><i class="fas fa-bath"></i> ${baths}</span>
+            </div>
+        `;
+        
+        grid.appendChild(card);
+    });
+}
+
+// Toggle Property Selection
+function togglePropertySelection(index) {
+    const selectedIndex = selectedPropertiesForComparison.indexOf(index);
+    
+    if (selectedIndex > -1) {
+        // Deselect
+        selectedPropertiesForComparison.splice(selectedIndex, 1);
+    } else {
+        // Select (max 4)
+        if (selectedPropertiesForComparison.length < 4) {
+            selectedPropertiesForComparison.push(index);
+        }
+    }
+    
+    updateComparisonPropertyGrid();
+    updateSelectedPropertiesDisplay();
+}
+
+// Update Selected Properties Display
+function updateSelectedPropertiesDisplay() {
+    const container = document.getElementById('selectedPropertiesContainer');
+    const cardsContainer = document.getElementById('selectedPropertiesCards');
+    const countSpan = document.getElementById('selectedCount');
+    
+    countSpan.textContent = selectedPropertiesForComparison.length;
+    
+    if (selectedPropertiesForComparison.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    cardsContainer.innerHTML = '';
+    
+    selectedPropertiesForComparison.forEach(index => {
+        const property = currentProperties[index];
+        const address = property.address?.street || property.area_name || `Property ${index + 1}`;
+        const price = formatCurrency(property.price);
+        
+        const miniCard = document.createElement('div');
+        miniCard.className = 'selected-property-mini-card';
+        miniCard.innerHTML = `
+            <button class="btn-remove-selected" onclick="togglePropertySelection(${index}); event.stopPropagation();">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="property-mini-price">${price}</div>
+            <div class="property-mini-address">${address}</div>
+        `;
+        
+        cardsContainer.appendChild(miniCard);
+    });
+}
+
+// Start Comparison
+function startComparison() {
+    if (selectedPropertiesForComparison.length < 2) {
+        alert('Please select at least 2 properties to compare');
+        return;
+    }
+    
+    console.log('Starting comparison with', selectedPropertiesForComparison.length, 'properties');
+    
+    const properties = selectedPropertiesForComparison.map(i => currentProperties[i]);
+    
+    // Calculate scores
+    const scores = calculateComparisonScores(properties);
+    
+    // Show results
+    showComparisonResults(properties, scores);
+}
+
+// Calculate Comparison Scores
+function calculateComparisonScores(properties) {
+    return properties.map((property, index) => {
+        let score = 0;
+        const metrics = {};
+        
+        // Price score (lower is better, max 20 points)
+        const prices = properties.map(p => p.price || 0).filter(p => p > 0);
+        const minPrice = Math.min(...prices);
+        metrics.priceScore = property.price > 0 ? (minPrice / property.price) * 20 : 0;
+        score += metrics.priceScore;
+        
+        // Space score (more is better, max 20 points)
+        const beds = property.attributes?.bedrooms || 0;
+        const maxBeds = Math.max(...properties.map(p => p.attributes?.bedrooms || 0));
+        metrics.spaceScore = maxBeds > 0 ? (beds / maxBeds) * 20 : 0;
+        score += metrics.spaceScore;
+        
+        // Value score (price per bedroom, lower is better, max 20 points)
+        const pricePerBed = beds > 0 ? property.price / beds : Infinity;
+        const bestPricePerBed = Math.min(...properties.map(p => {
+            const b = p.attributes?.bedrooms || 0;
+            return b > 0 ? p.price / b : Infinity;
+        }));
+        metrics.valueScore = bestPricePerBed < Infinity && pricePerBed < Infinity ? 
+            (bestPricePerBed / pricePerBed) * 20 : 0;
+        score += metrics.valueScore;
+        
+        // Land size score (more is better, max 20 points)
+        const landSize = parseFloat(property.attributes?.land_size) || 0;
+        const maxLand = Math.max(...properties.map(p => parseFloat(p.attributes?.land_size) || 0));
+        metrics.landScore = maxLand > 0 ? (landSize / maxLand) * 20 : 0;
+        score += metrics.landScore;
+        
+        // Freshness score (newer listing is better, max 20 points)
+        const listingDate = property.listing_date ? new Date(property.listing_date) : null;
+        if (listingDate) {
+            const listingDates = properties.map(p => p.listing_date ? new Date(p.listing_date) : null).filter(d => d);
+            const newestDate = Math.max(...listingDates.map(d => d.getTime()));
+            const oldestDate = Math.min(...listingDates.map(d => d.getTime()));
+            const range = newestDate - oldestDate;
+            metrics.freshnessScore = range > 0 ? 
+                ((listingDate.getTime() - oldestDate) / range) * 20 : 10;
+            score += metrics.freshnessScore;
+        } else {
+            metrics.freshnessScore = 10;
+            score += 10;
+        }
+        
+        return {
+            propertyIndex: selectedPropertiesForComparison[index],
+            totalScore: Math.round(score),
+            metrics: metrics
+        };
+    });
+}
+
+// Show Comparison Results
+function showComparisonResults(properties, scores) {
+    // Hide selection, show results
+    document.querySelector('.comparison-selection').style.display = 'none';
+    document.getElementById('selectedPropertiesContainer').style.display = 'none';
+    document.getElementById('comparisonResults').style.display = 'block';
+    
+    // Show overall winner
+    const winner = scores.reduce((max, s) => s.totalScore > max.totalScore ? s : max, scores[0]);
+    const winnerProperty = properties[scores.indexOf(winner)];
+    const winnerAddress = winnerProperty.address?.street || winnerProperty.area_name || 'Property';
+    
+    document.querySelector('.winner-name').textContent = winnerAddress;
+    document.getElementById('winnerScore').textContent = winner.totalScore;
+    
+    // Build comparison table
+    buildComparisonTable(properties, scores);
+    
+    // Build charts
+    buildRadarChart(properties, scores);
+    buildPriceBarChart(properties);
+    
+    // Generate recommendations
+    generateRecommendations(properties, scores);
+}
+
+// Build Comparison Table
+function buildComparisonTable(properties, scores) {
+    const table = document.getElementById('comparisonTable');
+    const thead = table.querySelector('thead tr');
+    const tbody = table.querySelector('tbody');
+    
+    // Clear existing
+    thead.innerHTML = '<th class="metric-column">Metric</th>';
+    tbody.innerHTML = '';
+    
+    // Add property columns
+    properties.forEach((property, i) => {
+        const address = property.address?.street || property.area_name || `Property ${i + 1}`;
+        const th = document.createElement('th');
+        th.textContent = address;
+        thead.appendChild(th);
+    });
+    
+    // Define metrics rows
+    const metrics = [
+        { label: 'Price', getValue: p => formatCurrency(p.price), compareType: 'lower' },
+        { label: 'Bedrooms', getValue: p => p.attributes?.bedrooms || 'N/A', compareType: 'higher' },
+        { label: 'Bathrooms', getValue: p => p.attributes?.bathrooms || 'N/A', compareType: 'higher' },
+        { label: 'Garage Spaces', getValue: p => p.attributes?.garage_spaces || 'N/A', compareType: 'higher' },
+        { label: 'Land Size', getValue: p => p.attributes?.land_size ? p.attributes.land_size + ' m²' : 'N/A', compareType: 'higher' },
+        { label: 'Building Size', getValue: p => p.attributes?.building_size && p.attributes.building_size !== 'nan' ? p.attributes.building_size + ' m²' : 'N/A', compareType: 'higher' },
+        { label: 'Property Type', getValue: p => p.property_type || 'N/A', compareType: 'none' },
+        { label: 'Days on Market', getValue: p => {
+            if (p.listing_date) {
+                const days = Math.floor((new Date() - new Date(p.listing_date)) / (1000 * 60 * 60 * 24));
+                return days + ' days';
+            }
+            return 'N/A';
+        }, compareType: 'lower' },
+        { label: 'Overall Score', getValue: (p, i) => scores[i].totalScore + '/100', compareType: 'higher' }
+    ];
+    
+    // Build rows
+    metrics.forEach(metric => {
+        const row = document.createElement('tr');
+        
+        // Metric name
+        const metricCell = document.createElement('td');
+        metricCell.className = 'metric-column';
+        metricCell.textContent = metric.label;
+        row.appendChild(metricCell);
+        
+        // Property values
+        const values = properties.map((p, i) => ({
+            value: metric.getValue(p, i),
+            rawValue: getRawValue(p, metric.label, i, scores),
+            index: i
+        }));
+        
+        // Determine winner
+        let winnerIndex = -1;
+        if (metric.compareType !== 'none') {
+            const validValues = values.filter(v => v.rawValue !== null && v.rawValue !== 'N/A');
+            if (validValues.length > 0) {
+                if (metric.compareType === 'higher') {
+                    winnerIndex = validValues.reduce((max, v) => v.rawValue > max.rawValue ? v : max).index;
+                } else if (metric.compareType === 'lower') {
+                    winnerIndex = validValues.reduce((min, v) => v.rawValue < min.rawValue ? v : min).index;
+                }
+            }
+        }
+        
+        // Add cells
+        values.forEach((v, i) => {
+            const cell = document.createElement('td');
+            cell.textContent = v.value;
+            if (i === winnerIndex) {
+                cell.classList.add('winner');
+            }
+            row.appendChild(cell);
+        });
+        
+        tbody.appendChild(row);
+    });
+}
+
+// Get Raw Value for Comparison
+function getRawValue(property, metricLabel, index, scores) {
+    switch(metricLabel) {
+        case 'Price':
+            return property.price || null;
+        case 'Bedrooms':
+            return property.attributes?.bedrooms || null;
+        case 'Bathrooms':
+            return property.attributes?.bathrooms || null;
+        case 'Garage Spaces':
+            return property.attributes?.garage_spaces || null;
+        case 'Land Size':
+            return parseFloat(property.attributes?.land_size) || null;
+        case 'Building Size':
+            return parseFloat(property.attributes?.building_size) || null;
+        case 'Days on Market':
+            if (property.listing_date) {
+                return Math.floor((new Date() - new Date(property.listing_date)) / (1000 * 60 * 60 * 24));
+            }
+            return null;
+        case 'Overall Score':
+            return scores[index].totalScore;
+        default:
+            return null;
+    }
+}
+
+// Build Radar Chart
+function buildRadarChart(properties, scores) {
+    const canvas = document.getElementById('radarComparisonChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing
+    if (radarChart) {
+        radarChart.destroy();
+    }
+    
+    const colors = [
+        { bg: 'rgba(253, 119, 0, 0.2)', border: 'rgba(253, 119, 0, 1)' },
+        { bg: 'rgba(16, 185, 129, 0.2)', border: 'rgba(16, 185, 129, 1)' },
+        { bg: 'rgba(59, 130, 246, 0.2)', border: 'rgba(59, 130, 246, 1)' },
+        { bg: 'rgba(239, 68, 68, 0.2)', border: 'rgba(239, 68, 68, 1)' }
+    ];
+    
+    const datasets = properties.map((property, i) => {
+        const address = property.address?.street || property.area_name || `Property ${i + 1}`;
+        return {
+            label: address,
+            data: [
+                scores[i].metrics.priceScore || 0,
+                scores[i].metrics.spaceScore || 0,
+                scores[i].metrics.valueScore || 0,
+                scores[i].metrics.landScore || 0,
+                scores[i].metrics.freshnessScore || 0
+            ],
+            backgroundColor: colors[i].bg,
+            borderColor: colors[i].border,
+            borderWidth: 2,
+            pointBackgroundColor: colors[i].border,
+            pointBorderColor: '#fff',
+            pointHoverBackgroundColor: '#fff',
+            pointHoverBorderColor: colors[i].border
+        };
+    });
+    
+    radarChart = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: ['Price', 'Space', 'Value', 'Land', 'Freshness'],
+            datasets: datasets
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#e5e5e5',
+                        padding: 15,
+                        font: {
+                            size: 11
+                        }
+                    }
+                }
+            },
+            scales: {
+                r: {
+                    beginAtZero: true,
+                    max: 20,
+                    ticks: {
+                        color: '#cccccc',
+                        backdropColor: 'transparent'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    },
+                    pointLabels: {
+                        color: '#e5e5e5',
+                        font: {
+                            size: 12
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Build Price Bar Chart
+function buildPriceBarChart(properties) {
+    const canvas = document.getElementById('priceComparisonChart');
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Destroy existing
+    if (priceBarChart) {
+        priceBarChart.destroy();
+    }
+    
+    const labels = properties.map((p, i) => p.address?.street || p.area_name || `Property ${i + 1}`);
+    const prices = properties.map(p => p.price || 0);
+    
+    priceBarChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Price',
+                data: prices,
+                backgroundColor: 'rgba(253, 119, 0, 0.8)',
+                borderColor: 'rgba(253, 119, 0, 1)',
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        color: '#cccccc',
+                        callback: function(value) {
+                            return '$' + (value / 1000).toFixed(0) + 'k';
+                        }
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: '#cccccc',
+                        maxRotation: 45,
+                        minRotation: 45
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+// Generate Recommendations
+function generateRecommendations(properties, scores) {
+    const grid = document.getElementById('recommendationsGrid');
+    grid.innerHTML = '';
+    
+    const recommendations = [];
+    
+    // Best value
+    const pricePerBedValues = properties.map((p, i) => {
+        const beds = p.attributes?.bedrooms || 0;
+        return beds > 0 ? { value: p.price / beds, index: i } : null;
+    }).filter(v => v);
+    
+    if (pricePerBedValues.length > 0) {
+        const bestValue = pricePerBedValues.reduce((min, v) => v.value < min.value ? v : min);
+        const prop = properties[bestValue.index];
+        recommendations.push({
+            badge: 'Best Value',
+            property: prop.address?.street || prop.area_name || 'Property',
+            reason: `Lowest price per bedroom at ${formatCurrency(bestValue.value)}/bed`
+        });
+    }
+    
+    // Most spacious
+    const maxBeds = Math.max(...properties.map(p => p.attributes?.bedrooms || 0));
+    const spaciousIndex = properties.findIndex(p => (p.attributes?.bedrooms || 0) === maxBeds);
+    if (spaciousIndex >= 0 && maxBeds > 0) {
+        const prop = properties[spaciousIndex];
+        recommendations.push({
+            badge: 'Most Spacious',
+            property: prop.address?.street || prop.area_name || 'Property',
+            reason: `${maxBeds} bedrooms with ${prop.attributes?.bathrooms || 0} bathrooms`
+        });
+    }
+    
+    // Newest listing
+    const listingDates = properties.map((p, i) => ({ date: p.listing_date ? new Date(p.listing_date) : null, index: i })).filter(d => d.date);
+    if (listingDates.length > 0) {
+        const newest = listingDates.reduce((max, d) => d.date > max.date ? d : max);
+        const prop = properties[newest.index];
+        const days = Math.floor((new Date() - newest.date) / (1000 * 60 * 60 * 24));
+        recommendations.push({
+            badge: 'Freshest Listing',
+            property: prop.address?.street || prop.area_name || 'Property',
+            reason: `Listed ${days} days ago - newest on the market`
+        });
+    }
+    
+    // Best overall score
+    const winner = scores.reduce((max, s, i) => s.totalScore > max.score ? { score: s.totalScore, index: i } : max, { score: 0, index: 0 });
+    const winnerProp = properties[winner.index];
+    recommendations.push({
+        badge: 'Top Pick',
+        property: winnerProp.address?.street || winnerProp.area_name || 'Property',
+        reason: `Highest overall score: ${winner.score}/100 points`
+    });
+    
+    // Render recommendations
+    recommendations.forEach(rec => {
+        const card = document.createElement('div');
+        card.className = 'recommendation-card';
+        card.innerHTML = `
+            <div class="rec-badge">${rec.badge}</div>
+            <div class="rec-property">${rec.property}</div>
+            <div class="rec-reason">${rec.reason}</div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+// Clear Comparison
+function clearComparison() {
+    selectedPropertiesForComparison = [];
+    updateComparisonPropertyGrid();
+    updateSelectedPropertiesDisplay();
+    hideComparisonResults();
+}
+
+// Hide Comparison Results
+function hideComparisonResults() {
+    document.querySelector('.comparison-selection').style.display = 'block';
+    document.getElementById('comparisonResults').style.display = 'none';
+}
+
+// Export Comparison
+function exportComparison() {
+    alert('Export functionality coming soon! You will be able to export comparisons as PDF or share via link.');
 }

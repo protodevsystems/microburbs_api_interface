@@ -427,6 +427,10 @@
                                 <i class="fas fa-calculator"></i>
                                 Investment Calculator
                             </button>
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('comparison')">
+                                <i class="fas fa-balance-scale"></i>
+                                Property Comparison
+                            </button>
                             <button class="playground-subtab-btn" disabled style="opacity: 0.5;">
                                 <i class="fas fa-folder"></i>
                                 Portfolio
@@ -1000,6 +1004,107 @@
 
                         </div>
                         <!-- End Investment Calculator Sub-Panel -->
+
+                        <!-- Property Comparison Matrix Sub-Panel -->
+                        <div id="comparison-panel" class="playground-subpanel">
+                            
+                            <!-- Comparison Header -->
+                            <div class="comparison-header">
+                                <div class="comparison-title">
+                                    <h2><i class="fas fa-balance-scale"></i> Property Comparison Matrix</h2>
+                                    <p class="comparison-subtitle">Compare up to 4 properties side-by-side to find your perfect match</p>
+                                </div>
+                                <div class="comparison-actions">
+                                    <button class="btn-clear-comparison" onclick="clearComparison()">
+                                        <i class="fas fa-trash"></i> Clear All
+                                    </button>
+                                    <button class="btn-export-comparison" onclick="exportComparison()">
+                                        <i class="fas fa-download"></i> Export
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Property Selection Area -->
+                            <div class="comparison-selection">
+                                <h3><i class="fas fa-hand-pointer"></i> Select Properties to Compare</h3>
+                                <p class="selection-hint">Choose 2-4 properties from the list below</p>
+                                <div id="comparisonPropertyGrid" class="comparison-property-grid">
+                                    <!-- Properties will be populated here -->
+                                    <div class="comparison-placeholder">
+                                        <i class="fas fa-search"></i>
+                                        <p>Search for properties to start comparing</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Selected Properties Cards -->
+                            <div id="selectedPropertiesContainer" class="selected-properties-container" style="display: none;">
+                                <h3><i class="fas fa-check-circle"></i> Selected for Comparison (<span id="selectedCount">0</span>/4)</h3>
+                                <div id="selectedPropertiesCards" class="selected-properties-cards">
+                                    <!-- Selected property cards will appear here -->
+                                </div>
+                                <button class="btn-start-comparison" onclick="startComparison()">
+                                    <i class="fas fa-play"></i> Start Comparison
+                                </button>
+                            </div>
+
+                            <!-- Comparison Results -->
+                            <div id="comparisonResults" class="comparison-results" style="display: none;">
+                                
+                                <!-- Overall Winner Banner -->
+                                <div class="winner-banner">
+                                    <div class="winner-icon">
+                                        <i class="fas fa-trophy"></i>
+                                    </div>
+                                    <div class="winner-content">
+                                        <h3>🏆 Overall Winner</h3>
+                                        <div class="winner-property" id="overallWinner">
+                                            <div class="winner-name">--</div>
+                                            <div class="winner-score">Score: <span id="winnerScore">0</span>/100</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Comparison Table -->
+                                <div class="comparison-table-container">
+                                    <table class="comparison-table" id="comparisonTable">
+                                        <thead>
+                                            <tr>
+                                                <th class="metric-column">Metric</th>
+                                                <!-- Property columns will be added dynamically -->
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Rows will be populated dynamically -->
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Visual Comparison Charts -->
+                                <div class="comparison-charts">
+                                    <div class="comparison-chart-card">
+                                        <h4><i class="fas fa-chart-radar"></i> Property DNA (Radar Chart)</h4>
+                                        <canvas id="radarComparisonChart" style="max-height: 400px;"></canvas>
+                                    </div>
+                                    
+                                    <div class="comparison-chart-card">
+                                        <h4><i class="fas fa-chart-bar"></i> Price Comparison</h4>
+                                        <canvas id="priceComparisonChart" style="max-height: 300px;"></canvas>
+                                    </div>
+                                </div>
+
+                                <!-- Recommendations -->
+                                <div class="comparison-recommendations">
+                                    <h3><i class="fas fa-lightbulb"></i> Smart Recommendations</h3>
+                                    <div id="recommendationsGrid" class="recommendations-grid">
+                                        <!-- Recommendations will be populated here -->
+                                    </div>
+                                </div>
+
+                            </div>
+
+                        </div>
+                        <!-- End Property Comparison Matrix Sub-Panel -->
 
                     </div>
                 </div>
