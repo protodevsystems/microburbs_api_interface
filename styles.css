@@ -2336,6 +2336,10 @@ canvas {
     filter: brightness(0.7);
 }
 
+.swipe-card:not(:first-child) .swipe-card-content {
+    visibility: hidden;
+}
+
 .swipe-card:active {
     cursor: grabbing;
 }
