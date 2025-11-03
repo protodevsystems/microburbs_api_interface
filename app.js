@@ -2581,8 +2581,9 @@ function renderSwipeCards() {
         swipeStackEl.appendChild(card);
     }
     
-    // Add swipe listeners to top card only
-    const topCard = swipeStackEl.querySelector('.swipe-card');
+    // Add swipe listeners to top card only (last card in DOM)
+    const allCards = swipeStackEl.querySelectorAll('.swipe-card');
+    const topCard = allCards[allCards.length - 1];
     if (topCard) {
         initSwipeListeners(topCard);
         currentCard = topCard;
