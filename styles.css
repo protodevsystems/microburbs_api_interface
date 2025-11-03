@@ -2332,12 +2332,16 @@ canvas {
 }
 
 .swipe-card:not(:first-child) {
-    opacity: 0.5;
-    filter: brightness(0.7);
+    opacity: 0;
+    pointer-events: none;
 }
 
-.swipe-card:nth-child(n+3) .swipe-card-content {
-    visibility: hidden;
+.swipe-card:nth-child(2) {
+    opacity: 0.15;
+}
+
+.swipe-card:not(:first-child) .swipe-card-content {
+    display: none;
 }
 
 .swipe-card:active {
@@ -2392,6 +2396,15 @@ canvas {
     overflow-y: auto;
     background: #000000;
     border-top: 1px solid rgba(253, 119, 0, 0.3);
+}
+
+.swipe-card-content::-webkit-scrollbar {
+    display: none;
+}
+
+.swipe-card-content {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
 }
 
 .swipe-card-price {
