@@ -2389,7 +2389,7 @@ canvas {
 }
 
 .swipe-card-image i {
-    opacity: 0.3;
+    opacity: 1;
 }
 
 .swipe-card-content {
