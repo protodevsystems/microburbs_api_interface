@@ -5978,36 +5978,60 @@ async function calculateStreetBearing(coords) {
             out geom;
         `;
         
-        const response = await fetch('https://overpass-api.de/api/interpreter', {
-            method: 'POST',
-            body: overpassQuery
-        });
+        // Add timeout to prevent hanging on slow/timeout responses
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
         
-        if (!response.ok) {
-            // Fallback: simple grid-based estimation
-            return estimateBearingFromGrid(coords);
-        }
-        
-        const data = await response.json();
-        
-        if (data.elements && data.elements.length > 0) {
-            // Get the first street way
-            const street = data.elements[0];
+        try {
+            const response = await fetch('https://overpass-api.de/api/interpreter', {
+                method: 'POST',
+                body: overpassQuery,
+                signal: controller.signal
+            });
             
-            if (street.geometry && street.geometry.length >= 2) {
-                // Calculate bearing between first two nodes
-                const p1 = street.geometry[0];
-                const p2 = street.geometry[1];
-                
-                return calculateBearing(p1.lat, p1.lon, p2.lat, p2.lon);
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) {
+                // Silently fallback for expected errors (timeouts, rate limits)
+                if (response.status === 504 || response.status === 429) {
+                    return estimateBearingFromGrid(coords);
+                }
+                return estimateBearingFromGrid(coords);
             }
+            
+            const data = await response.json();
+            
+            if (data.elements && data.elements.length > 0) {
+                // Get the first street way
+                const street = data.elements[0];
+                
+                if (street.geometry && street.geometry.length >= 2) {
+                    // Calculate bearing between first two nodes
+                    const p1 = street.geometry[0];
+                    const p2 = street.geometry[1];
+                    
+                    return calculateBearing(p1.lat, p1.lon, p2.lat, p2.lon);
+                }
+            }
+            
+            // Fallback to grid estimation
+            return estimateBearingFromGrid(coords);
+            
+        } catch (fetchError) {
+            clearTimeout(timeoutId);
+            
+            // Silently handle timeouts and aborted requests (expected with free Overpass API)
+            if (fetchError.name === 'AbortError' || fetchError.name === 'TimeoutError') {
+                return estimateBearingFromGrid(coords);
+            }
+            throw fetchError; // Re-throw unexpected errors
         }
-        
-        // Fallback to grid estimation
-        return estimateBearingFromGrid(coords);
         
     } catch (error) {
-        console.log('Street bearing calculation error:', error);
+        // Only log unexpected errors, not timeouts
+        if (error.name !== 'AbortError' && error.name !== 'TimeoutError') {
+            console.log('Street bearing calculation error:', error);
+        }
         return estimateBearingFromGrid(coords);
     }
 }
