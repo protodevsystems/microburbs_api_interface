@@ -19,6 +19,12 @@ let currentProperties = [];
 let currentSuburb = '';
 let currentInvestorMetrics = null;
 
+// Utility function for number formatting
+function formatNumber(num) {
+    if (num === null || num === undefined || isNaN(num)) return '0';
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+}
+
 // Event Listeners
 suburbInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
