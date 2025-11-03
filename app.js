@@ -3672,9 +3672,10 @@ function generateCalculator() {
     
     if (lastFetchedData && lastFetchedData.results) {
         lastFetchedData.results.forEach((result, index) => {
-            if (result.property && result.property.price) {
-                const address = result.property.address?.street || result.area_name || `Property ${index + 1}`;
-                const price = formatCurrency(result.property.price);
+            if (result.price) {
+                // Use address.street if available, otherwise use area_name
+                const address = result.address?.street || result.area_name || `Property ${index + 1}`;
+                const price = formatCurrency(result.price);
                 const option = document.createElement('option');
                 option.value = index;
                 option.textContent = `${address} - ${price}`;
@@ -3682,6 +3683,8 @@ function generateCalculator() {
             }
         });
     }
+    
+    console.log(`Populated calculator with ${lastFetchedData?.results?.length || 0} properties`);
     
     // Calculate default values
     calculateMortgage();
@@ -3696,8 +3699,10 @@ function loadPropertyToCalculator() {
         return;
     }
     
-    const property = lastFetchedData.results[index].property;
-    const price = property.price || 1000000;
+    const result = lastFetchedData.results[index];
+    const price = result.price || 1000000;
+    
+    console.log(`Loading property: ${result.address?.street || result.area_name} - ${formatCurrency(price)}`);
     
     // Update all calculator inputs with property price
     document.getElementById('mortgagePrice').value = price;
