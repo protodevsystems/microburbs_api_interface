@@ -152,8 +152,20 @@ Interactive mapping with advanced geospatial features powered by Leaflet.js + Op
 - Efficient filter updates without full re-render
 - Map size invalidation to prevent display issues
 
-#### 🎮 Playground Tab (Property Tinder)
-**The most engaging way to discover properties** - a gamified swipe interface inspired by Tinder:
+#### 🎮 Playground Tab (Interactive Features Hub)
+**Multiple engaging ways to explore properties** - switch between different interactive features using sub-tabs:
+
+##### 📑 Sub-Tab Navigation
+The Playground features its own horizontal sub-navigation allowing you to switch between:
+- **💖 Property Tinder** - Swipe-based discovery
+- **📊 Timeline View** - Historical visualization  
+- **💰 Calculator** - Coming Soon
+- **📁 Portfolio** - Coming Soon
+
+---
+
+##### 💖 Property Tinder
+**Swipe-based property discovery** - a gamified interface inspired by Tinder:
 
 **❤️ Swipe Interface:**
 - **Tinder-style card stack**: Properties displayed as beautiful swipeable cards
@@ -207,6 +219,64 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Decision-making when overwhelmed by options
 - Engaging client presentations
 - Mobile property discovery on-the-go
+
+---
+
+##### 📊 Timeline View
+**Visualize listing history and market activity over time** - see when properties entered the market:
+
+**📈 Interactive Timeline Chart:**
+- **Dual-axis line chart** powered by Chart.js
+- **Left axis**: Number of listings per month (orange line)
+- **Right axis**: Average price per month (green line)
+- **Interactive tooltips**: Hover to see exact numbers
+- **Grouped by month**: Automatic monthly aggregation
+- **Visual trends**: Spot busy periods and price patterns
+
+**🎯 Timeline Stats Cards:**
+- **Earliest Listing**: Date of first property listed
+- **Latest Listing**: Date of most recent property
+- **Avg Days on Market**: How long properties have been listed
+- **Currently Showing**: Count of properties in current view
+
+**⏯️ Interactive Playback:**
+- **Play button**: Animated 10-second playback through entire timeline
+- **Pause button**: Stop animation at any point
+- **Reset button**: Jump back to the end (all properties)
+- **Smooth animation**: Properties appear chronologically
+
+**🎚️ Timeline Slider:**
+- **Scrub through time**: Drag slider to travel through listing history
+- **Real-time filtering**: Properties filter as you move the slider
+- **Date display**: Shows current date at slider position
+- **Date range markers**: Start and end dates labeled below slider
+- **Orange slider thumb**: Smooth, responsive dragging
+
+**🏘️ Filtered Property Grid:**
+- **Dynamic filtering**: Only shows properties listed before slider date
+- **Property cards** with:
+  - Listing date badge ("X days ago" or "Today")
+  - Full property details (price, address, beds, baths, garage)
+  - Animated card entrance
+- **Sort options**:
+  - Newest First / Oldest First
+  - Price: High to Low / Low to High
+- **No properties message**: Clear feedback when slider is before first listing
+
+**✨ Use Cases:**
+- Understand market listing patterns (busy vs slow periods)
+- Identify fresh listings vs stale inventory
+- See price trends over time
+- Discover when most competition entered market
+- Find recently-reduced properties
+- Analyze listing velocity
+
+**💡 Perfect For:**
+- Market timing analysis
+- Identifying stale vs fresh inventory
+- Understanding seasonal patterns
+- Client presentations showing market dynamics
+- Investment timing decisions
 
 ### 📊 Investment Intelligence Dashboard
 - **Comprehensive investor metrics** organized in 4 key categories:
@@ -420,17 +490,27 @@ Then navigate to `http://localhost:8000` in your browser.
      - Click "Fit All" to auto-zoom to all properties
    - Perfect for understanding geographic distribution and location-based decisions
 
-7. **Play with Property Tinder** (Optional - For Fun & Quick Shortlisting)
+7. **Explore Playground Features** (Optional - Interactive Tools)
    - Click the **"Playground"** tab at the top
-   - Swipe through properties Tinder-style:
-     - **Swipe RIGHT** or click ❤️ to LIKE a property
-     - **Swipe LEFT** or click ✖️ to PASS
-     - **Keyboard shortcuts**: ← (Pass), → (Like), ↑ (Undo)
-     - Drag cards with mouse or touch
+   - Choose from sub-tabs at the top of Playground:
+   
+   **💖 Property Tinder:**
+   - Swipe through properties Tinder-style
+   - **Swipe RIGHT** or click ❤️ to LIKE
+   - **Swipe LEFT** or click ✖️ to PASS
+   - **Keyboard shortcuts**: ← (Pass), → (Like), ↑ (Undo)
    - Build your liked properties collection
    - View AI-like preference insights after swiping
    - Export your shortlist for further analysis
-   - Perfect for engaging property discovery sessions
+   
+   **📊 Timeline View:**
+   - See interactive chart of listings over time
+   - Use slider to scrub through timeline
+   - Click **Play** for animated playback
+   - Filter properties by listing date
+   - Sort by date or price
+   - See "days on market" for each property
+   - Understand market activity patterns
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:
