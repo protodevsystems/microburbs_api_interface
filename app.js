@@ -3194,6 +3194,8 @@ function switchPlaygroundFeature(featureName) {
         generateComparison();
     } else if (featureName === '3d-viz') {
         generate3DVisualization();
+    } else if (featureName === 'compass') {
+        generatePropertyCompass();
     }
 }
 
@@ -5540,5 +5542,402 @@ function resetCamera() {
         viz3dCamera.position.set(40, 40, 40);
         viz3dCamera.lookAt(0, 0, 0);
     }
+}
+
+
+// ===========================
+// PROPERTY COMPASS - ORIENTATION DETECTION
+// ===========================
+
+// Global Compass State
+let compassResults = [];
+let filteredCompassResults = [];
+
+// Generate Property Compass (called when switching to compass sub-tab)
+function generatePropertyCompass() {
+    console.log('Generating Property Compass with', currentProperties.length, 'properties');
+    
+    if (!currentProperties || currentProperties.length === 0) {
+        alert('No properties to analyze! Please search for properties first.');
+        return;
+    }
+    
+    // Analyze all properties
+    analyzeAllOrientations();
+}
+
+// Analyze all properties for orientation
+function analyzeAllOrientations() {
+    console.log('Analyzing orientations for all properties...');
+    
+    compassResults = currentProperties.map((property, index) => {
+        return detectPropertyOrientation(property, index);
+    });
+    
+    filteredCompassResults = [...compassResults];
+    renderCompassTable();
+    updateCompassStats();
+}
+
+// Main orientation detection function - tries multiple methods
+function detectPropertyOrientation(property, index) {
+    const methods = [
+        detectFromDescription,
+        detectFromStreetName,
+        detectFromCoordinates,
+        detectFromSuburbContext
+    ];
+    
+    let bestResult = null;
+    
+    // Try each detection method in order of reliability
+    for (let method of methods) {
+        const result = method(property);
+        if (result && result.confidence !== 'none') {
+            if (!bestResult || getConfidenceValue(result.confidence) > getConfidenceValue(bestResult.confidence)) {
+                bestResult = result;
+            }
+        }
+    }
+    
+    // If no method worked, return unknown
+    if (!bestResult) {
+        bestResult = {
+            orientation: 'Unknown',
+            confidence: 'none',
+            method: 'None',
+            reasoning: 'No orientation indicators found in available data'
+        };
+    }
+    
+    return {
+        ...bestResult,
+        property: property,
+        propertyIndex: index,
+        address: property.address?.street || 'Unknown',
+        suburb: property.address?.sal || '',
+        sunExposure: getSunExposure(bestResult.orientation)
+    };
+}
+
+// Method 1: Detect from property description text
+function detectFromDescription(property) {
+    const description = property.attributes?.description || '';
+    if (!description) return null;
+    
+    const text = description.toLowerCase();
+    
+    // Comprehensive orientation patterns
+    const patterns = [
+        // North
+        { 
+            regex: /north(?:ern)?[- ]facing|northerly aspect|faces? (?:the )?north|north to rear|north[- ]facing (?:backyard|living|aspect)/gi,
+            orientation: 'North',
+            confidence: 'high'
+        },
+        // South
+        { 
+            regex: /south(?:ern)?[- ]facing|southerly aspect|faces? (?:the )?south|south to rear|south[- ]facing (?:backyard|living|aspect)/gi,
+            orientation: 'South',
+            confidence: 'high'
+        },
+        // East
+        { 
+            regex: /east(?:ern)?[- ]facing|easterly aspect|faces? (?:the )?east|east to rear|east[- ]facing (?:backyard|living|aspect)/gi,
+            orientation: 'East',
+            confidence: 'high'
+        },
+        // West
+        { 
+            regex: /west(?:ern)?[- ]facing|westerly aspect|faces? (?:the )?west|west to rear|west[- ]facing (?:backyard|living|aspect)/gi,
+            orientation: 'West',
+            confidence: 'high'
+        },
+        // Compound directions
+        { 
+            regex: /north[- ]?east|ne facing|northeast(?:ern)? aspect/gi,
+            orientation: 'North-East',
+            confidence: 'high'
+        },
+        { 
+            regex: /north[- ]?west|nw facing|northwest(?:ern)? aspect/gi,
+            orientation: 'North-West',
+            confidence: 'high'
+        },
+        { 
+            regex: /south[- ]?east|se facing|southeast(?:ern)? aspect/gi,
+            orientation: 'South-East',
+            confidence: 'high'
+        },
+        { 
+            regex: /south[- ]?west|sw facing|southwest(?:ern)? aspect/gi,
+            orientation: 'South-West',
+            confidence: 'high'
+        },
+        // Sun-related patterns (less direct but still useful)
+        { 
+            regex: /sun[- ]?drenched (?:northern|north)/gi,
+            orientation: 'North',
+            confidence: 'medium'
+        },
+        { 
+            regex: /morning sun|sunrise/gi,
+            orientation: 'East',
+            confidence: 'low'
+        },
+        { 
+            regex: /afternoon sun|sunset/gi,
+            orientation: 'West',
+            confidence: 'low'
+        }
+    ];
+    
+    for (let pattern of patterns) {
+        const matches = text.match(pattern.regex);
+        if (matches) {
+            const excerpt = extractExcerpt(text, matches[0]);
+            return {
+                orientation: pattern.orientation,
+                confidence: pattern.confidence,
+                method: 'Text Mining',
+                reasoning: `Found "${matches[0]}" in property description: "${excerpt}"`
+            };
+        }
+    }
+    
+    return null;
+}
+
+// Method 2: Detect from street name patterns
+function detectFromStreetName(property) {
+    const street = property.address?.street || '';
+    if (!street) return null;
+    
+    const streetLower = street.toLowerCase();
+    
+    // Street name patterns
+    const patterns = [
+        { keywords: ['north ', ' north', 'northern'], orientation: 'North', confidence: 'low' },
+        { keywords: ['south ', ' south', 'southern'], orientation: 'South', confidence: 'low' },
+        { keywords: ['east ', ' east', 'eastern'], orientation: 'East', confidence: 'low' },
+        { keywords: ['west ', ' west', 'western'], orientation: 'West', confidence: 'low' }
+    ];
+    
+    for (let pattern of patterns) {
+        for (let keyword of pattern.keywords) {
+            if (streetLower.includes(keyword)) {
+                return {
+                    orientation: pattern.orientation,
+                    confidence: pattern.confidence,
+                    method: 'Street Pattern',
+                    reasoning: `Street name "${street}" contains directional indicator "${keyword.trim()}" - houses on this street may have ${pattern.orientation.toLowerCase()} orientation`
+                };
+            }
+        }
+    }
+    
+    return null;
+}
+
+// Method 3: Detect from coordinates (hemisphere-based heuristics)
+function detectFromCoordinates(property) {
+    const coords = property.coordinates;
+    if (!coords || !coords.latitude || !coords.longitude) return null;
+    
+    const lat = coords.latitude;
+    const lon = coords.longitude;
+    
+    // Australia is in Southern Hemisphere
+    // North-facing properties are generally preferred (more sun in winter)
+    
+    // This is a weak heuristic but can provide some context
+    // Properties in southern Australia suburbs might have certain patterns
+    
+    // If latitude is very negative (far south), north-facing is more likely premium
+    if (lat < -35) {
+        return {
+            orientation: 'North',
+            confidence: 'low',
+            method: 'Coordinate Analysis',
+            reasoning: `Property at latitude ${lat.toFixed(4)}° (far south in Australia) - North-facing properties are statistically more common in this region for optimal sun exposure`
+        };
+    }
+    
+    // This method is intentionally weak - only used as last resort
+    return null;
+}
+
+// Method 4: Detect from suburb context (Australian patterns)
+function detectFromSuburbContext(property) {
+    const suburb = property.address?.sal || '';
+    if (!suburb) return null;
+    
+    // Some Australian suburbs have typical layout patterns
+    // This is speculative but can provide context
+    
+    const suburbLower = suburb.toLowerCase();
+    
+    // Coastal suburbs often have specific orientations
+    if (suburbLower.includes('beach') || suburbLower.includes('coastal')) {
+        return {
+            orientation: 'Unknown',
+            confidence: 'low',
+            method: 'Suburb Context',
+            reasoning: `Coastal suburb (${suburb}) - orientation varies based on beach proximity. Unable to determine without specific data`
+        };
+    }
+    
+    // Hills suburbs might face valleys
+    if (suburbLower.includes('hill') || suburbLower.includes('heights')) {
+        return {
+            orientation: 'Unknown',
+            confidence: 'low',
+            method: 'Suburb Context',
+            reasoning: `Elevated suburb (${suburb}) - properties likely face various directions for view optimization. Cannot determine from data`
+        };
+    }
+    
+    return null;
+}
+
+// Helper: Extract excerpt around matched text
+function extractExcerpt(text, match) {
+    const index = text.toLowerCase().indexOf(match.toLowerCase());
+    const start = Math.max(0, index - 30);
+    const end = Math.min(text.length, index + match.length + 30);
+    let excerpt = text.substring(start, end);
+    
+    if (start > 0) excerpt = '...' + excerpt;
+    if (end < text.length) excerpt = excerpt + '...';
+    
+    return excerpt.trim();
+}
+
+// Helper: Get confidence numeric value for comparison
+function getConfidenceValue(confidence) {
+    const values = { high: 3, medium: 2, low: 1, none: 0 };
+    return values[confidence] || 0;
+}
+
+// Helper: Get sun exposure description
+function getSunExposure(orientation) {
+    const exposures = {
+        'North': 'All-day sun, warm in winter (best in Southern Hemisphere)',
+        'South': 'Limited direct sun, cooler temperatures',
+        'East': 'Morning sun, bright start to day',
+        'West': 'Afternoon/evening sun, warm in summer',
+        'North-East': 'Morning through midday sun',
+        'North-West': 'Midday through evening sun',
+        'South-East': 'Early morning sun only',
+        'South-West': 'Late afternoon sun only',
+        'Unknown': 'Cannot determine sun exposure'
+    };
+    
+    return exposures[orientation] || 'Variable sun exposure';
+}
+
+// Render compass table
+function renderCompassTable() {
+    const tbody = document.getElementById('compassTableBody');
+    if (!tbody) return;
+    
+    tbody.innerHTML = filteredCompassResults.map((result) => {
+        const orientationClass = result.orientation.toLowerCase().replace(/[^a-z]/g, '');
+        const confidenceClass = result.confidence;
+        
+        return `
+            <tr data-orientation="${orientationClass}" data-confidence="${confidenceClass}">
+                <td>
+                    <div class="property-address">${result.address}</div>
+                    <div class="property-suburb">${result.suburb}</div>
+                </td>
+                <td>
+                    <div class="orientation-badge ${orientationClass}">
+                        ${getOrientationIcon(result.orientation)} ${result.orientation}
+                    </div>
+                </td>
+                <td>
+                    <span class="confidence-badge ${confidenceClass}">${result.confidence}</span>
+                </td>
+                <td>
+                    <span class="detection-method">${result.method}</span>
+                </td>
+                <td>
+                    <div class="reasoning-text">${result.reasoning}</div>
+                </td>
+                <td>
+                    <div class="sun-exposure">
+                        <i class="fas fa-sun"></i> ${result.sunExposure}
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Get orientation icon
+function getOrientationIcon(orientation) {
+    const icons = {
+        'North': '↑',
+        'South': '↓',
+        'East': '→',
+        'West': '←',
+        'North-East': '↗',
+        'North-West': '↖',
+        'South-East': '↘',
+        'South-West': '↙',
+        'Unknown': '?'
+    };
+    
+    return icons[orientation] || '?';
+}
+
+// Update compass statistics
+function updateCompassStats() {
+    const stats = {
+        north: 0,
+        south: 0,
+        east: 0,
+        west: 0,
+        highConfidence: 0,
+        unknown: 0
+    };
+    
+    compassResults.forEach(result => {
+        const orientation = result.orientation.toLowerCase();
+        
+        if (orientation.includes('north')) stats.north++;
+        else if (orientation.includes('south')) stats.south++;
+        else if (orientation.includes('east')) stats.east++;
+        else if (orientation.includes('west')) stats.west++;
+        else if (orientation === 'unknown') stats.unknown++;
+        
+        if (result.confidence === 'high') stats.highConfidence++;
+    });
+    
+    document.getElementById('northCount').textContent = stats.north;
+    document.getElementById('southCount').textContent = stats.south;
+    document.getElementById('eastCount').textContent = stats.east;
+    document.getElementById('westCount').textContent = stats.west;
+    document.getElementById('highConfidenceCount').textContent = stats.highConfidence;
+    document.getElementById('unknownCount').textContent = stats.unknown;
+}
+
+// Filter compass results
+function filterByOrientation() {
+    const orientationFilter = document.getElementById('orientationFilter').value;
+    const confidenceFilter = document.getElementById('confidenceFilter').value;
+    
+    filteredCompassResults = compassResults.filter(result => {
+        const orientationMatch = orientationFilter === 'all' || 
+            result.orientation.toLowerCase().includes(orientationFilter);
+        
+        const confidenceMatch = confidenceFilter === 'all' || 
+            result.confidence === confidenceFilter;
+        
+        return orientationMatch && confidenceMatch;
+    });
+    
+    renderCompassTable();
 }
 

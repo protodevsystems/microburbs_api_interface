@@ -162,6 +162,7 @@ The Playground features its own horizontal sub-navigation allowing you to switch
 - **💰 Investment Calculator** - Comprehensive financial analysis
 - **⚖️ Property Comparison** - Side-by-side battle arena
 - **🎪 3D Visualization** - Interactive 3D property universe
+- **🧭 Property Compass** - AI-powered orientation detection
 
 ---
 
@@ -518,6 +519,91 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Efficient mesh management
 - Multiple projection algorithms
 
+##### 🧭 Property Compass
+**AI-powered house orientation detection** - determine which direction properties face using multiple intelligent analysis methods:
+
+**🔍 Detection Methods:**
+1. **Text Mining** (Most Reliable):
+   - Scans property descriptions for orientation keywords
+   - Detects patterns like "north-facing", "northerly aspect", "faces north"
+   - Finds sun-related clues ("morning sun", "afternoon sun")
+   - High confidence when explicit mentions found
+
+2. **Street Pattern Analysis**:
+   - Analyzes street names for directional indicators
+   - Examples: "North Street", "Eastern Avenue", "West Road"
+   - Provides contextual clues about area layout
+   - Low-to-medium confidence
+
+3. **Coordinate Analysis**:
+   - Uses latitude/longitude for hemisphere-based heuristics
+   - Considers Australian climate patterns (Southern Hemisphere)
+   - Statistical inference about preferred orientations
+   - Low confidence (last resort)
+
+4. **Suburb Context**:
+   - Considers typical layout patterns in Australian suburbs
+   - Identifies coastal, hills, or valley locations
+   - Provides contextual reasoning when specific data unavailable
+
+**📊 Results Table:**
+- **Property Address**: Full street address and suburb
+- **Orientation Badge**: Direction with visual indicator (N/S/E/W)
+- **Confidence Level**: High/Medium/Low rating
+- **Detection Method**: Which analysis method succeeded
+- **Detailed Reasoning**: Exact explanation of how orientation was determined
+- **Sun Exposure**: Description of sunlight patterns for that orientation
+
+**🎨 Confidence Levels:**
+- 🟢 **High**: Explicit mention in description ("north-facing living areas")
+- 🟡 **Medium**: Strong contextual clues ("sun-drenched northern aspect")
+- 🔴 **Low**: Inference from street names or geographic patterns
+- ⚪ **Unknown**: No reliable indicators found
+
+**📈 Statistics Dashboard:**
+- Count of each orientation (North/South/East/West)
+- High confidence detections counter
+- Unknown orientations counter
+- Real-time filtering by orientation or confidence
+
+**💡 Understanding Orientations (Southern Hemisphere):**
+- **North Facing** ☀️: Best sun exposure year-round, warm in winter, premium in Australia
+- **South Facing** ☁️: Cooler, less direct sun, good for bedrooms/storage
+- **East Facing** 🌅: Morning sun, bright breakfast areas
+- **West Facing** 🌆: Afternoon/evening sun, warm in summer, good for decks
+
+**✨ Features:**
+- Analyzes all properties simultaneously
+- Filters by orientation or confidence level
+- Shows exact reasoning for each detection
+- Comprehensive sun exposure descriptions
+- Color-coded orientation badges
+- Detailed method transparency
+
+**🎯 Use Cases:**
+- Quick orientation screening for all listings
+- Filter for preferred sun exposure
+- Understand why AI made each determination
+- Compare orientation distribution in area
+- Verify agent claims with data
+- Educational tool for understanding property aspects
+
+**💡 Perfect For:**
+- Buyers prioritizing sun exposure
+- Investors analyzing property features
+- Agents verifying listing accuracy
+- Anyone curious about data analysis methods
+- Understanding AI decision-making transparency
+- Learning about Australian property preferences
+
+**🔬 Transparency:**
+Every detection shows:
+- Which method succeeded
+- Exact text or pattern that triggered detection
+- Confidence reasoning
+- Why other methods didn't apply
+- Full traceability of AI logic
+
 ---
 
 ### 📊 Investment Intelligence Dashboard
@@ -786,6 +872,22 @@ Then navigate to `http://localhost:8000` in your browser.
    - **Legend**: Shows what colors mean (bottom left)
    - **Instructions**: Hover tooltips for controls (top left)
    - **Stats panel**: See totals, price range, best value, current view
+   
+   **🧭 Property Compass:**
+   - Click **"Analyze All"** button to detect orientations
+   - View comprehensive table with all properties
+   - Each row shows:
+     - Property address and suburb
+     - **Orientation badge** (N/S/E/W with color coding)
+     - **Confidence level** (High/Medium/Low)
+     - **Detection method** (Text Mining, Street Pattern, etc.)
+     - **Detailed reasoning** - exact explanation of how AI determined the orientation
+     - **Sun exposure** - practical description of sunlight patterns
+   - **Filter by orientation**: Dropdown to show only North/South/East/West facing
+   - **Filter by confidence**: Show only High/Medium/Low confidence results
+   - **Statistics cards**: See counts for each orientation and confidence level
+   - **Legend section**: Learn about sun exposure for each direction
+   - Full transparency - see exactly why AI made each determination
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:

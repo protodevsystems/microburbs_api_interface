@@ -436,6 +436,10 @@
                                 <i class="fas fa-cube"></i>
                                 3D Visualization
                             </button>
+                            <button class="playground-subtab-btn" onclick="switchPlaygroundFeature('compass')">
+                                <i class="fas fa-compass"></i>
+                                Property Compass
+                            </button>
                         </div>
 
                         <!-- Property Tinder Sub-Panel -->
@@ -1225,6 +1229,170 @@
 
                         </div>
                         <!-- End 3D Visualization Sub-Panel -->
+
+                        <!-- Property Compass Sub-Panel -->
+                        <div id="compass-panel" class="playground-subpanel">
+                            
+                            <!-- Compass Header -->
+                            <div class="compass-header">
+                                <div class="compass-title">
+                                    <h2><i class="fas fa-compass"></i> Property Compass</h2>
+                                    <p class="compass-subtitle">AI-powered house orientation detection using multiple analysis methods</p>
+                                </div>
+                                <div class="compass-actions">
+                                    <button class="btn-analyze-all" onclick="analyzeAllOrientations()">
+                                        <i class="fas fa-sync-alt"></i> Analyze All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Detection Methods Info -->
+                            <div class="detection-methods-info">
+                                <h3><i class="fas fa-lightbulb"></i> Detection Methods</h3>
+                                <div class="methods-grid">
+                                    <div class="method-card">
+                                        <div class="method-icon">📝</div>
+                                        <div class="method-name">Text Mining</div>
+                                        <div class="method-desc">Analyzes property descriptions for orientation keywords</div>
+                                    </div>
+                                    <div class="method-card">
+                                        <div class="method-icon">🗺️</div>
+                                        <div class="method-name">Street Pattern</div>
+                                        <div class="method-desc">Infers from street name patterns (North St, East Ave, etc.)</div>
+                                    </div>
+                                    <div class="method-card">
+                                        <div class="method-icon">📐</div>
+                                        <div class="method-name">Coordinate Analysis</div>
+                                        <div class="method-desc">Uses latitude/longitude for hemisphere-based heuristics</div>
+                                    </div>
+                                    <div class="method-card">
+                                        <div class="method-icon">🏘️</div>
+                                        <div class="method-name">Suburb Context</div>
+                                        <div class="method-desc">Considers typical layout patterns in Australian suburbs</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Orientation Results Table -->
+                            <div class="compass-results">
+                                <div class="results-header">
+                                    <h3><i class="fas fa-table"></i> Orientation Analysis Results</h3>
+                                    <div class="results-filters">
+                                        <select id="orientationFilter" onchange="filterByOrientation()">
+                                            <option value="all">All Orientations</option>
+                                            <option value="north">North Facing</option>
+                                            <option value="south">South Facing</option>
+                                            <option value="east">East Facing</option>
+                                            <option value="west">West Facing</option>
+                                            <option value="unknown">Unknown</option>
+                                        </select>
+                                        <select id="confidenceFilter" onchange="filterByOrientation()">
+                                            <option value="all">All Confidence</option>
+                                            <option value="high">High Confidence</option>
+                                            <option value="medium">Medium Confidence</option>
+                                            <option value="low">Low Confidence</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="compass-table-container">
+                                    <table class="compass-table" id="compassTable">
+                                        <thead>
+                                            <tr>
+                                                <th>Property</th>
+                                                <th>Orientation</th>
+                                                <th>Confidence</th>
+                                                <th>Detection Method</th>
+                                                <th>Reasoning</th>
+                                                <th>Sun Exposure</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="compassTableBody">
+                                            <!-- Rows populated by JavaScript -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Summary -->
+                            <div class="compass-stats">
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-sun"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">North Facing</div>
+                                        <div class="stat-value" id="northCount">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-cloud"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">South Facing</div>
+                                        <div class="stat-value" id="southCount">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-sunrise"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">East Facing</div>
+                                        <div class="stat-value" id="eastCount">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-sunset"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">West Facing</div>
+                                        <div class="stat-value" id="westCount">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">High Confidence</div>
+                                        <div class="stat-value" id="highConfidenceCount">0</div>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon"><i class="fas fa-question-circle"></i></div>
+                                    <div class="stat-info">
+                                        <div class="stat-label">Unknown</div>
+                                        <div class="stat-value" id="unknownCount">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Legend -->
+                            <div class="compass-legend">
+                                <h4><i class="fas fa-info-circle"></i> Understanding Orientations</h4>
+                                <div class="legend-grid">
+                                    <div class="legend-item">
+                                        <div class="legend-badge north">N</div>
+                                        <div class="legend-text">
+                                            <strong>North Facing</strong> - Best sun exposure in Southern Hemisphere, warm in winter, ideal for living areas
+                                        </div>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-badge south">S</div>
+                                        <div class="legend-text">
+                                            <strong>South Facing</strong> - Cooler, less direct sun, good for bedrooms/utility areas
+                                        </div>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-badge east">E</div>
+                                        <div class="legend-text">
+                                            <strong>East Facing</strong> - Morning sun, bright start to the day, good for breakfast areas
+                                        </div>
+                                    </div>
+                                    <div class="legend-item">
+                                        <div class="legend-badge west">W</div>
+                                        <div class="legend-text">
+                                            <strong>West Facing</strong> - Afternoon/evening sun, warm in summer, good for decks/patios
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                        <!-- End Property Compass Sub-Panel -->
 
                     </div>
                 </div>

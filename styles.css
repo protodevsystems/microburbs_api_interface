@@ -4925,3 +4925,450 @@ canvas {
     font-weight: 700;
     color: var(--text-primary);
 }
+
+/* ===========================
+   PROPERTY COMPASS
+   =========================== */
+
+.compass-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: linear-gradient(135deg, rgba(253, 119, 0, 0.15), rgba(59, 130, 246, 0.1));
+    border-radius: 16px;
+    border: 2px solid var(--accent-color);
+}
+
+.compass-title h2 {
+    font-size: 2rem;
+    margin: 0 0 0.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.compass-title h2 i {
+    color: var(--accent-color);
+    animation: spin 8s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.compass-subtitle {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    margin: 0;
+}
+
+.btn-analyze-all {
+    padding: 0.75rem 1.5rem;
+    background: var(--accent-color);
+    border: none;
+    border-radius: 8px;
+    color: #000000;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-analyze-all:hover {
+    background: #ff8800;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(253, 119, 0, 0.4);
+}
+
+/* Detection Methods Info */
+.detection-methods-info {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.detection-methods-info h3 {
+    font-size: 1.3rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.detection-methods-info h3 i {
+    color: var(--accent-color);
+}
+
+.methods-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+}
+
+.method-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.method-card:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(253, 119, 0, 0.2);
+}
+
+.method-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.method-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.method-desc {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+/* Compass Results */
+.compass-results {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+}
+
+.compass-results .results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.compass-results h3 {
+    font-size: 1.3rem;
+    margin: 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.compass-results h3 i {
+    color: var(--accent-color);
+}
+
+.results-filters {
+    display: flex;
+    gap: 1rem;
+}
+
+.results-filters select {
+    padding: 0.5rem 1rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.results-filters select:hover {
+    border-color: var(--accent-color);
+}
+
+/* Compass Table */
+.compass-table-container {
+    overflow-x: auto;
+    margin-top: 1.5rem;
+}
+
+.compass-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.compass-table thead {
+    background: rgba(253, 119, 0, 0.1);
+}
+
+.compass-table th {
+    padding: 1rem;
+    text-align: left;
+    font-weight: 700;
+    color: var(--text-primary);
+    border-bottom: 2px solid var(--accent-color);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.compass-table td {
+    padding: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-secondary);
+}
+
+.compass-table tbody tr {
+    transition: all 0.2s;
+}
+
+.compass-table tbody tr:hover {
+    background: rgba(253, 119, 0, 0.05);
+}
+
+.property-address {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.property-suburb {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.orientation-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.orientation-badge.north {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+    border: 2px solid #fde047;
+}
+
+.orientation-badge.south {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 2px solid #60a5fa;
+}
+
+.orientation-badge.east {
+    background: rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+    border: 2px solid #fb923c;
+}
+
+.orientation-badge.west {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a78bfa;
+    border: 2px solid #a78bfa;
+}
+
+.orientation-badge.unknown {
+    background: rgba(156, 163, 175, 0.2);
+    color: #9ca3af;
+    border: 2px solid #9ca3af;
+}
+
+.confidence-badge {
+    display: inline-block;
+    padding: 0.4rem 0.8rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.confidence-badge.high {
+    background: rgba(16, 185, 129, 0.2);
+    color: #10b981;
+}
+
+.confidence-badge.medium {
+    background: rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+}
+
+.confidence-badge.low {
+    background: rgba(239, 68, 68, 0.2);
+    color: #ef4444;
+}
+
+.detection-method {
+    font-size: 0.9rem;
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.reasoning-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    max-width: 400px;
+}
+
+.sun-exposure {
+    font-size: 0.9rem;
+}
+
+.sun-exposure i {
+    color: var(--accent-color);
+    margin-right: 0.25rem;
+}
+
+/* Compass Stats */
+.compass-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.compass-stats .stat-card {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s;
+}
+
+.compass-stats .stat-card:hover {
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(253, 119, 0, 0.2);
+}
+
+.compass-stats .stat-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(253, 119, 0, 0.1);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: var(--accent-color);
+}
+
+.compass-stats .stat-info {
+    flex: 1;
+}
+
+.compass-stats .stat-label {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+}
+
+.compass-stats .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+/* Compass Legend */
+.compass-legend {
+    background: var(--card-background);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.compass-legend h4 {
+    font-size: 1.2rem;
+    margin: 0 0 1.5rem 0;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.compass-legend h4 i {
+    color: var(--accent-color);
+}
+
+.legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.compass-legend .legend-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.legend-badge {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+}
+
+.legend-badge.north {
+    background: rgba(234, 179, 8, 0.2);
+    color: #fde047;
+    border: 3px solid #fde047;
+}
+
+.legend-badge.south {
+    background: rgba(59, 130, 246, 0.2);
+    color: #60a5fa;
+    border: 3px solid #60a5fa;
+}
+
+.legend-badge.east {
+    background: rgba(251, 146, 60, 0.2);
+    color: #fb923c;
+    border: 3px solid #fb923c;
+}
+
+.legend-badge.west {
+    background: rgba(168, 85, 247, 0.2);
+    color: #a78bfa;
+    border: 3px solid #a78bfa;
+}
+
+.legend-text {
+    flex: 1;
+}
+
+.legend-text strong {
+    display: block;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+    font-size: 1.05rem;
+}
+
+.legend-text {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
