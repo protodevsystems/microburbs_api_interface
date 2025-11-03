@@ -71,6 +71,87 @@ Advanced analytics for data-driven decision making with **WOW factor** features:
 - **One-Click Export**: Export technical data table directly to CSV
 - **All charts built with Chart.js** for interactive, professional visualizations
 
+#### 🗺️ Map View Tab (Geographic Intelligence)
+Interactive mapping with advanced geospatial features powered by Leaflet.js + OpenStreetMap (no API key required):
+
+**🎯 Interactive Map Features:**
+- **Color-Coded Property Markers**:
+  - 🟢 Green: Low-priced properties (below Q1 - 25th percentile)
+  - 🟠 Orange: Medium-priced properties (between Q1 and Q3)
+  - 🔴 Red: High-priced properties (above Q3 - 75th percentile)
+  - Custom pin design with teardrop shape and gradients
+  - Click markers to view property details in popup
+  - "Add to Compare" button in each popup
+
+- **Marker Clustering**:
+  - Automatic grouping when zoomed out for performance
+  - Shows property count in orange gradient cluster circles
+  - Expands on click to reveal individual markers
+  - Toggle clustering on/off with floating control button
+
+- **Heat Map Overlay**:
+  - Visual price density overlay
+  - Color gradient: Green (low prices) → Orange (medium) → Red (high prices)
+  - Based on normalized price intensity
+  - Toggle on/off to reveal/hide heat layer
+  - Radius: 25m, Blur: 15 for smooth visualization
+
+**🎛️ Advanced Filters & Controls:**
+- **Left Sidebar - Filters**:
+  - **Price Range Sliders**: Dual sliders for min/max price filtering
+    - Real-time updates as you drag
+    - Displays current values in formatted currency
+    - Synced sliders (min can't exceed max)
+  - **Property Type Checkboxes**: Filter by House, Unit, Townhouse, Land
+    - Multiple selections allowed
+    - Real-time marker visibility updates
+  - **Reset Filters Button**: One-click reset to show all properties
+  - **Price Legend**: Visual guide to marker colors
+
+- **Floating Map Controls** (Top-right):
+  - **Fit All Properties**: Auto-zoom to show all visible properties
+  - **Toggle Clustering**: Enable/disable marker grouping
+  - **Toggle Heat Map**: Show/hide price density overlay
+  - **Draw Search Radius**: Interactive circle drawing tool
+  - **Property Count Badge**: Live count of visible properties
+
+**📏 Search Radius Tool:**
+- Draw circles on map to define search areas
+- Shows radius in kilometers
+- Calculates and displays property count within radius
+- Distance calculation using Haversine formula
+- Clear drawn circles and redraw as needed
+- Perfect for location-based property searches
+
+**⚖️ Side-by-Side Property Comparison:**
+- **Right Sidebar - Compare Properties**:
+  - Click "Add to Compare" in marker popups
+  - Compare up to 2 properties simultaneously
+  - **Comparison Metrics** (auto-highlighted):
+    - 💰 Price (cheaper property highlighted in green)
+    - 📐 $/m² value (better value highlighted)
+    - 🛏️ Bedrooms & 🛁 Bathrooms
+    - 🏞️ Land Size (larger highlighted in green)
+    - 🚗 Garage spaces
+    - 📊 Investment Score (reused from Technical Insights)
+  - Green highlighting automatically shows which property wins each metric
+  - Remove properties individually or clear all
+  - Comparison placeholder guides when empty
+
+**🎨 Professional Design:**
+- Orange/black theme integration matching the platform
+- Smooth animations and transitions
+- Custom Leaflet popup styling
+- Responsive sidebars with scroll
+- Floating controls with hover effects
+- Interactive tooltips on all controls
+
+**🚀 Performance Features:**
+- Lazy map initialization (only loads on first tab switch)
+- Marker clustering for smooth performance with many properties
+- Efficient filter updates without full re-render
+- Map size invalidation to prevent display issues
+
 ### 📊 Investment Intelligence Dashboard
 - **Comprehensive investor metrics** organized in 4 key categories:
   

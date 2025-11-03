@@ -8,6 +8,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Leaflet CSS and JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Leaflet Marker Cluster -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    
+    <!-- Leaflet Heat Map -->
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+    
+    <!-- Leaflet Draw -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 </head>
 <body>
     <nav class="navbar">
@@ -122,6 +138,10 @@
                 <button class="tab-btn" onclick="switchTab('technical-insights')">
                     <i class="fas fa-chart-bar"></i>
                     Technical Insights
+                </button>
+                <button class="tab-btn" onclick="switchTab('map-view')">
+                    <i class="fas fa-map-marked-alt"></i>
+                    Map View
                 </button>
             </div>
 
@@ -273,6 +293,117 @@
                     </div>
                 </div>
                 <!-- End Technical Insights Tab -->
+
+                <!-- Map View Tab -->
+                <div id="map-view-tab" class="tab-panel">
+                    <div class="map-view-container">
+                        
+                        <!-- Left Sidebar - Filters -->
+                        <div class="map-sidebar-left">
+                            <div class="sidebar-header">
+                                <h3><i class="fas fa-filter"></i> Filters</h3>
+                            </div>
+                            
+                            <div class="filter-section">
+                                <label class="filter-label">Price Range</label>
+                                <div class="price-range-container">
+                                    <input type="range" id="minPriceSlider" class="price-slider" min="0" max="5000000" step="50000" value="0">
+                                    <input type="range" id="maxPriceSlider" class="price-slider" min="0" max="5000000" step="50000" value="5000000">
+                                    <div class="price-labels">
+                                        <span id="minPriceLabel">$0</span>
+                                        <span id="maxPriceLabel">$5M+</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="filter-section">
+                                <label class="filter-label">Property Type</label>
+                                <div class="checkbox-group">
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" class="property-type-filter" value="House" checked>
+                                        <span>House</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" class="property-type-filter" value="Unit" checked>
+                                        <span>Unit</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" class="property-type-filter" value="Townhouse" checked>
+                                        <span>Townhouse</span>
+                                    </label>
+                                    <label class="checkbox-label">
+                                        <input type="checkbox" class="property-type-filter" value="Land" checked>
+                                        <span>Land</span>
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button class="btn-reset-filters" onclick="resetMapFilters()">
+                                <i class="fas fa-redo"></i>
+                                Reset Filters
+                            </button>
+                            
+                            <div class="map-legend">
+                                <h4>Price Legend</h4>
+                                <div class="legend-item">
+                                    <span class="legend-marker legend-green"></span>
+                                    <span>Low Price</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-marker legend-orange"></span>
+                                    <span>Medium Price</span>
+                                </div>
+                                <div class="legend-item">
+                                    <span class="legend-marker legend-red"></span>
+                                    <span>High Price</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Map Container -->
+                        <div id="propertyMap" class="map-container"></div>
+                        
+                        <!-- Floating Map Controls -->
+                        <div class="map-controls">
+                            <button class="map-control-btn" onclick="fitAllProperties()" title="Show all properties">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                            <button class="map-control-btn" id="toggleClusterBtn" onclick="toggleClustering()" title="Toggle clustering">
+                                <i class="fas fa-layer-group"></i>
+                            </button>
+                            <button class="map-control-btn" id="toggleHeatBtn" onclick="toggleHeatMap()" title="Toggle heat map">
+                                <i class="fas fa-fire"></i>
+                            </button>
+                            <button class="map-control-btn" id="drawRadiusBtn" onclick="enableRadiusDraw()" title="Draw search radius">
+                                <i class="fas fa-circle-notch"></i>
+                            </button>
+                            <div class="property-count-badge" id="mapPropertyCount">
+                                <i class="fas fa-home"></i>
+                                <span id="visiblePropertyCount">0</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Right Sidebar - Property Comparison -->
+                        <div class="map-sidebar-right">
+                            <div class="sidebar-header">
+                                <h3><i class="fas fa-balance-scale"></i> Compare Properties</h3>
+                                <button class="btn-clear-comparison" onclick="clearComparison()">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                            
+                            <div id="comparisonContainer" class="comparison-container">
+                                <div class="comparison-placeholder">
+                                    <i class="fas fa-mouse-pointer"></i>
+                                    <p>Click on markers to compare properties</p>
+                                    <p class="small-text">Select up to 2 properties</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                    </div>
+                </div>
+                <!-- End Map View Tab -->
             </div>
             <!-- End Tab Content -->
         </div>

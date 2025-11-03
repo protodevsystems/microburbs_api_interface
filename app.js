@@ -980,6 +980,18 @@ function switchTab(tabName) {
     if (tabName === 'technical-insights' && currentProperties.length > 0) {
         generateTechnicalInsights();
     }
+    
+    // If switching to map view, initialize/update the map
+    if (tabName === 'map-view' && currentProperties.length > 0) {
+        // Small delay to ensure the map container is visible
+        setTimeout(() => {
+            generateMapView();
+            // Invalidate size to fix any display issues
+            if (propertyMap) {
+                propertyMap.invalidateSize();
+            }
+        }, 100);
+    }
 }
 
 // ==================== TECHNICAL INSIGHTS GENERATION ====================
@@ -1931,4 +1943,568 @@ function calculateSkewness(arr) {
     
     const cubedDiffs = arr.map(value => Math.pow((value - mean) / stdDev, 3));
     return (n / ((n - 1) * (n - 2))) * cubedDiffs.reduce((a, b) => a + b, 0);
+}
+
+// ==================== MAP VIEW FUNCTIONALITY ====================
+
+// Global map variables
+let propertyMap = null;
+let mapMarkers = [];
+let markerClusterGroup = null;
+let heatMapLayer = null;
+let drawnItems = null;
+let drawControl = null;
+let comparisonProperties = [];
+let isClusteringEnabled = true;
+let isHeatMapVisible = false;
+let currentMapFilters = {
+    minPrice: 0,
+    maxPrice: 5000000,
+    propertyTypes: ['House', 'Unit', 'Townhouse', 'Land']
+};
+
+// Initialize Map View
+function generateMapView() {
+    console.log('Generating Map View');
+    
+    if (!propertyMap) {
+        // Initialize map only once
+        propertyMap = L.map('propertyMap').setView([-33.0, 151.7], 12);
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(propertyMap);
+        
+        // Initialize marker cluster group
+        markerClusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 60,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: function(cluster) {
+                const count = cluster.getChildCount();
+                return L.divIcon({
+                    html: `<div style="background: linear-gradient(135deg, var(--primary-color), var(--accent-color)); 
+                           width: 40px; height: 40px; border-radius: 50%; display: flex; 
+                           align-items: center; justify-content: center; color: white; 
+                           font-weight: bold; box-shadow: 0 4px 12px rgba(253,119,0,0.4);">
+                           ${count}</div>`,
+                    className: 'custom-cluster-icon',
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+        
+        // Initialize drawn items layer for circles
+        drawnItems = new L.FeatureGroup();
+        propertyMap.addLayer(drawnItems);
+        
+        // Setup price sliders
+        setupPriceFilters();
+        
+        // Setup property type filters
+        setupPropertyTypeFilters();
+    }
+    
+    // Add/update markers
+    addPropertyMarkers();
+    
+    // Update property count
+    updatePropertyCount();
+}
+
+// Setup Price Range Filters
+function setupPriceFilters() {
+    const minSlider = document.getElementById('minPriceSlider');
+    const maxSlider = document.getElementById('maxPriceSlider');
+    const minLabel = document.getElementById('minPriceLabel');
+    const maxLabel = document.getElementById('maxPriceLabel');
+    
+    if (!minSlider || !maxSlider) return;
+    
+    // Get price range from current properties
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        
+        minSlider.min = 0;
+        minSlider.max = maxPrice;
+        minSlider.value = minPrice;
+        
+        maxSlider.min = 0;
+        maxSlider.max = maxPrice;
+        maxSlider.value = maxPrice;
+        
+        currentMapFilters.minPrice = minPrice;
+        currentMapFilters.maxPrice = maxPrice;
+        
+        minLabel.textContent = '$' + formatNumber(minPrice);
+        maxLabel.textContent = '$' + formatNumber(maxPrice);
+    }
+    
+    minSlider.addEventListener('input', function() {
+        currentMapFilters.minPrice = parseInt(this.value);
+        minLabel.textContent = '$' + formatNumber(this.value);
+        if (currentMapFilters.minPrice > currentMapFilters.maxPrice) {
+            maxSlider.value = this.value;
+            currentMapFilters.maxPrice = parseInt(this.value);
+            maxLabel.textContent = '$' + formatNumber(this.value);
+        }
+        filterMapMarkers();
+    });
+    
+    maxSlider.addEventListener('input', function() {
+        currentMapFilters.maxPrice = parseInt(this.value);
+        maxLabel.textContent = '$' + formatNumber(this.value);
+        if (currentMapFilters.maxPrice < currentMapFilters.minPrice) {
+            minSlider.value = this.value;
+            currentMapFilters.minPrice = parseInt(this.value);
+            minLabel.textContent = '$' + formatNumber(this.value);
+        }
+        filterMapMarkers();
+    });
+}
+
+// Setup Property Type Filters
+function setupPropertyTypeFilters() {
+    const checkboxes = document.querySelectorAll('.property-type-filter');
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                if (!currentMapFilters.propertyTypes.includes(this.value)) {
+                    currentMapFilters.propertyTypes.push(this.value);
+                }
+            } else {
+                currentMapFilters.propertyTypes = currentMapFilters.propertyTypes.filter(t => t !== this.value);
+            }
+            filterMapMarkers();
+        });
+    });
+}
+
+// Add Property Markers to Map
+function addPropertyMarkers() {
+    // Clear existing markers
+    if (markerClusterGroup) {
+        markerClusterGroup.clearLayers();
+    }
+    mapMarkers = [];
+    
+    // Calculate price quartiles for color coding
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    const q1 = calculatePercentile(prices, 25);
+    const q3 = calculatePercentile(prices, 75);
+    
+    currentProperties.forEach(property => {
+        if (!property.coordinates || !property.coordinates.latitude || !property.coordinates.longitude) {
+            return;
+        }
+        
+        const lat = property.coordinates.latitude;
+        const lng = property.coordinates.longitude;
+        
+        // Determine marker color based on price
+        let markerColor = 'orange';
+        if (property.price < q1) {
+            markerColor = 'green';
+        } else if (property.price > q3) {
+            markerColor = 'red';
+        }
+        
+        // Create custom icon
+        const customIcon = L.divIcon({
+            className: 'custom-marker-icon',
+            html: `<div class="marker-pin marker-${markerColor}"></div>`,
+            iconSize: [32, 32],
+            iconAnchor: [16, 32],
+            popupAnchor: [0, -32]
+        });
+        
+        // Create marker
+        const marker = L.marker([lat, lng], { icon: customIcon });
+        
+        // Create popup content
+        const popupContent = `
+            <div class="popup-property-card">
+                <h4>${property.property_type || 'Property'}</h4>
+                <div class="popup-property-address">${property.address?.street || 'Address not available'}</div>
+                <div class="popup-property-price">$${formatNumber(property.price)}</div>
+                <div class="popup-property-features">
+                    <span><i class="fas fa-bed"></i> ${property.attributes?.bedrooms || 'N/A'}</span>
+                    <span><i class="fas fa-bath"></i> ${property.attributes?.bathrooms || 'N/A'}</span>
+                    <span><i class="fas fa-car"></i> ${property.attributes?.garage_spaces || 'N/A'}</span>
+                </div>
+                <button class="popup-view-btn" onclick="addToComparison(${JSON.stringify(property).replace(/"/g, '&quot;')})">
+                    Add to Compare
+                </button>
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        
+        // Store property data with marker
+        marker.propertyData = property;
+        
+        mapMarkers.push(marker);
+    });
+    
+    // Add markers to cluster group or directly to map
+    if (isClusteringEnabled) {
+        markerClusterGroup.addLayers(mapMarkers);
+        if (!propertyMap.hasLayer(markerClusterGroup)) {
+            propertyMap.addLayer(markerClusterGroup);
+        }
+    } else {
+        mapMarkers.forEach(marker => marker.addTo(propertyMap));
+    }
+    
+    // Fit map to show all markers
+    if (mapMarkers.length > 0) {
+        const group = new L.featureGroup(mapMarkers);
+        propertyMap.fitBounds(group.getBounds().pad(0.1));
+    }
+    
+    // Apply current filters
+    filterMapMarkers();
+}
+
+// Filter Map Markers
+function filterMapMarkers() {
+    let visibleCount = 0;
+    
+    mapMarkers.forEach(marker => {
+        const property = marker.propertyData;
+        const price = property.price || 0;
+        const type = property.property_type || 'Unknown';
+        
+        const passesFilters = 
+            price >= currentMapFilters.minPrice &&
+            price <= currentMapFilters.maxPrice &&
+            currentMapFilters.propertyTypes.includes(type);
+        
+        if (passesFilters) {
+            if (isClusteringEnabled) {
+                if (!markerClusterGroup.hasLayer(marker)) {
+                    markerClusterGroup.addLayer(marker);
+                }
+            } else {
+                if (!propertyMap.hasLayer(marker)) {
+                    marker.addTo(propertyMap);
+                }
+            }
+            visibleCount++;
+        } else {
+            if (isClusteringEnabled) {
+                markerClusterGroup.removeLayer(marker);
+            } else {
+                propertyMap.removeLayer(marker);
+            }
+        }
+    });
+    
+    // Update count
+    document.getElementById('visiblePropertyCount').textContent = visibleCount;
+}
+
+// Reset Map Filters
+function resetMapFilters() {
+    // Reset sliders
+    const prices = currentProperties.map(p => p.price).filter(p => p && p > 0);
+    if (prices.length > 0) {
+        const minPrice = Math.min(...prices);
+        const maxPrice = Math.max(...prices);
+        
+        document.getElementById('minPriceSlider').value = minPrice;
+        document.getElementById('maxPriceSlider').value = maxPrice;
+        document.getElementById('minPriceLabel').textContent = '$' + formatNumber(minPrice);
+        document.getElementById('maxPriceLabel').textContent = '$' + formatNumber(maxPrice);
+        
+        currentMapFilters.minPrice = minPrice;
+        currentMapFilters.maxPrice = maxPrice;
+    }
+    
+    // Reset checkboxes
+    document.querySelectorAll('.property-type-filter').forEach(cb => {
+        cb.checked = true;
+    });
+    currentMapFilters.propertyTypes = ['House', 'Unit', 'Townhouse', 'Land'];
+    
+    // Refilter markers
+    filterMapMarkers();
+}
+
+// Toggle Marker Clustering
+function toggleClustering() {
+    isClusteringEnabled = !isClusteringEnabled;
+    const btn = document.getElementById('toggleClusterBtn');
+    
+    if (isClusteringEnabled) {
+        // Enable clustering
+        mapMarkers.forEach(marker => propertyMap.removeLayer(marker));
+        markerClusterGroup.clearLayers();
+        markerClusterGroup.addLayers(mapMarkers);
+        propertyMap.addLayer(markerClusterGroup);
+        btn.classList.add('active');
+    } else {
+        // Disable clustering
+        propertyMap.removeLayer(markerClusterGroup);
+        mapMarkers.forEach(marker => marker.addTo(propertyMap));
+        btn.classList.remove('active');
+    }
+    
+    filterMapMarkers();
+}
+
+// Toggle Heat Map
+function toggleHeatMap() {
+    isHeatMapVisible = !isHeatMapVisible;
+    const btn = document.getElementById('toggleHeatBtn');
+    
+    if (isHeatMapVisible) {
+        // Create heat map if it doesn't exist
+        if (!heatMapLayer) {
+            const heatData = currentProperties
+                .filter(p => p.coordinates && p.coordinates.latitude && p.coordinates.longitude && p.price)
+                .map(p => {
+                    // Intensity based on price (normalize between 0 and 1)
+                    const prices = currentProperties.map(prop => prop.price).filter(pr => pr > 0);
+                    const maxPrice = Math.max(...prices);
+                    const intensity = p.price / maxPrice;
+                    
+                    return [
+                        p.coordinates.latitude,
+                        p.coordinates.longitude,
+                        intensity
+                    ];
+                });
+            
+            heatMapLayer = L.heatLayer(heatData, {
+                radius: 25,
+                blur: 15,
+                maxZoom: 17,
+                gradient: {
+                    0.0: '#10b981',
+                    0.5: '#fd7700',
+                    1.0: '#ef4444'
+                }
+            });
+        }
+        
+        propertyMap.addLayer(heatMapLayer);
+        btn.classList.add('active');
+    } else {
+        if (heatMapLayer) {
+            propertyMap.removeLayer(heatMapLayer);
+        }
+        btn.classList.remove('active');
+    }
+}
+
+// Enable Radius Drawing
+function enableRadiusDraw() {
+    if (!drawControl) {
+        drawControl = new L.Control.Draw({
+            draw: {
+                polyline: false,
+                polygon: false,
+                rectangle: false,
+                marker: false,
+                circlemarker: false,
+                circle: {
+                    shapeOptions: {
+                        color: '#fd7700',
+                        fillColor: '#fd7700',
+                        fillOpacity: 0.2
+                    },
+                    showRadius: true,
+                    metric: true
+                }
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        
+        propertyMap.addControl(drawControl);
+        
+        // Handle circle creation
+        propertyMap.on(L.Draw.Event.CREATED, function(event) {
+            const layer = event.layer;
+            drawnItems.clearLayers();
+            drawnItems.addLayer(layer);
+            
+            // Calculate properties within radius
+            const center = layer.getLatLng();
+            const radius = layer.getRadius(); // in meters
+            
+            let propertiesInRadius = 0;
+            mapMarkers.forEach(marker => {
+                const markerPos = marker.getLatLng();
+                const distance = center.distanceTo(markerPos);
+                
+                if (distance <= radius) {
+                    propertiesInRadius++;
+                }
+            });
+            
+            // Show popup with count
+            const radiusKm = (radius / 1000).toFixed(2);
+            layer.bindPopup(`
+                <div style="text-align: center;">
+                    <h4>Search Radius</h4>
+                    <p><strong>${radiusKm} km</strong></p>
+                    <p>${propertiesInRadius} properties found</p>
+                </div>
+            `).openPopup();
+        });
+    }
+    
+    // Activate circle drawing
+    const btn = document.getElementById('drawRadiusBtn');
+    btn.classList.add('active');
+    new L.Draw.Circle(propertyMap, drawControl.options.draw.circle).enable();
+}
+
+// Fit All Properties
+function fitAllProperties() {
+    if (mapMarkers.length > 0) {
+        const group = new L.featureGroup(mapMarkers);
+        propertyMap.fitBounds(group.getBounds().pad(0.1));
+    }
+}
+
+// Update Property Count
+function updatePropertyCount() {
+    const count = mapMarkers.filter(marker => {
+        const property = marker.propertyData;
+        const price = property.price || 0;
+        const type = property.property_type || 'Unknown';
+        
+        return price >= currentMapFilters.minPrice &&
+               price <= currentMapFilters.maxPrice &&
+               currentMapFilters.propertyTypes.includes(type);
+    }).length;
+    
+    document.getElementById('visiblePropertyCount').textContent = count;
+}
+
+// Add Property to Comparison
+function addToComparison(property) {
+    if (comparisonProperties.length >= 2) {
+        alert('You can only compare 2 properties at a time. Remove one to add another.');
+        return;
+    }
+    
+    // Check if already in comparison
+    if (comparisonProperties.find(p => p.address?.street === property.address?.street)) {
+        alert('This property is already in comparison.');
+        return;
+    }
+    
+    comparisonProperties.push(property);
+    renderComparison();
+}
+
+// Render Property Comparison
+function renderComparison() {
+    const container = document.getElementById('comparisonContainer');
+    
+    if (comparisonProperties.length === 0) {
+        container.innerHTML = `
+            <div class="comparison-placeholder">
+                <i class="fas fa-mouse-pointer"></i>
+                <p>Click on markers to compare properties</p>
+                <p class="small-text">Select up to 2 properties</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    
+    comparisonProperties.forEach((property, index) => {
+        // Calculate metrics
+        const landSize = parseLandSize(property.attributes?.land_size);
+        const pricePerSqm = landSize > 0 ? property.price / landSize : 0;
+        const investmentScore = calculateInvestmentScore(property);
+        
+        // Determine which metrics are better (for highlighting)
+        let priceBetter = false;
+        let sizeBetter = false;
+        let valueBetter = false;
+        
+        if (comparisonProperties.length === 2) {
+            const other = comparisonProperties[1 - index];
+            priceBetter = property.price < other.price;
+            sizeBetter = landSize > parseLandSize(other.attributes?.land_size);
+            const otherPricePerSqm = parseLandSize(other.attributes?.land_size) > 0 ? 
+                other.price / parseLandSize(other.attributes?.land_size) : 0;
+            valueBetter = pricePerSqm < otherPricePerSqm && pricePerSqm > 0;
+        }
+        
+        html += `
+            <div class="comparison-card">
+                <div class="comparison-card-header">
+                    <div>
+                        <h4>${property.property_type || 'Property'}</h4>
+                        <div class="comparison-card-address">${property.address?.street || 'Address not available'}</div>
+                    </div>
+                    <button class="comparison-card-remove" onclick="removeFromComparison(${index})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="comparison-metrics">
+                    <div class="comparison-metric ${priceBetter ? 'better' : ''}">
+                        <div class="comparison-metric-label">Price</div>
+                        <div class="comparison-metric-value">$${formatNumber(property.price)}</div>
+                    </div>
+                    <div class="comparison-metric ${valueBetter ? 'better' : ''}">
+                        <div class="comparison-metric-label">$/m²</div>
+                        <div class="comparison-metric-value">$${formatNumber(pricePerSqm)}</div>
+                    </div>
+                    <div class="comparison-metric">
+                        <div class="comparison-metric-label">Beds</div>
+                        <div class="comparison-metric-value">${property.attributes?.bedrooms || 'N/A'}</div>
+                    </div>
+                    <div class="comparison-metric">
+                        <div class="comparison-metric-label">Baths</div>
+                        <div class="comparison-metric-value">${property.attributes?.bathrooms || 'N/A'}</div>
+                    </div>
+                    <div class="comparison-metric ${sizeBetter ? 'better' : ''}">
+                        <div class="comparison-metric-label">Land Size</div>
+                        <div class="comparison-metric-value">${property.attributes?.land_size || 'N/A'}</div>
+                    </div>
+                    <div class="comparison-metric">
+                        <div class="comparison-metric-label">Garage</div>
+                        <div class="comparison-metric-value">${property.attributes?.garage_spaces || 'N/A'}</div>
+                    </div>
+                </div>
+                
+                <div class="comparison-score">
+                    <div class="comparison-score-label">Investment Score</div>
+                    <div class="comparison-score-value">${investmentScore.score}</div>
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Remove from Comparison
+function removeFromComparison(index) {
+    comparisonProperties.splice(index, 1);
+    renderComparison();
+}
+
+// Clear Comparison
+function clearComparison() {
+    comparisonProperties = [];
+    renderComparison();
 }
