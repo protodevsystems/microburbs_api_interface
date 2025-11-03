@@ -5422,7 +5422,6 @@ function createScoredPropertyCard(scored, isDeansList) {
         
         <div class="score-card-property">
             <div class="property-address">${address}</div>
-            <div class="property-price">${price}</div>
         </div>
         
         <div class="score-card-categories">
@@ -5435,6 +5434,7 @@ function createScoredPropertyCard(scored, isDeansList) {
         </div>
         
         <div class="score-card-footer">
+            <div class="score-card-price-badge">${price}</div>
             <button class="view-details-btn" onclick="event.stopPropagation(); showScoreDetail(scoredProperties[${scoredProperties.indexOf(scored)}]);">
                 View Report Card
             </button>

@@ -5176,22 +5176,13 @@ canvas {
 
 .score-card-property {
     margin-bottom: 1.5rem;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .property-address {
     font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
-    margin-bottom: 0.5rem;
     line-height: 1.4;
-}
-
-.scored-property-card .property-price {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--accent-color);
 }
 
 .score-card-categories {
@@ -5244,11 +5235,21 @@ canvas {
     margin-top: 1.5rem;
     padding-top: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     align-items: center;
     gap: 1rem;
-    flex-wrap: wrap;
+}
+
+.score-card-price-badge {
+    background: rgba(0, 0, 0, 0.85);
+    color: var(--accent-color);
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    font-weight: 700;
+    border: 2px solid rgba(253, 119, 0, 0.3);
+    white-space: nowrap;
 }
 
 .view-details-btn {
@@ -5258,10 +5259,11 @@ canvas {
     border-radius: 8px;
     color: var(--accent-color);
     font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     cursor: pointer;
     transition: all 0.3s;
     white-space: nowrap;
+    justify-self: center;
 }
 
 .view-details-btn:hover {
@@ -5273,6 +5275,7 @@ canvas {
     color: var(--text-secondary);
     font-size: 0.85rem;
     white-space: nowrap;
+    justify-self: end;
 }
 
 /* Score Modal */
@@ -5767,5 +5770,23 @@ canvas {
     
     .overall-score-number {
         font-size: 3rem;
+    }
+    
+    .score-card-footer {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+    }
+    
+    .score-card-price-badge {
+        justify-self: start;
+    }
+    
+    .view-details-btn {
+        justify-self: stretch;
+        width: 100%;
+    }
+    
+    .score-rank {
+        justify-self: start;
     }
 }
