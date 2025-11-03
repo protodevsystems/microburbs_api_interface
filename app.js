@@ -3192,8 +3192,8 @@ function switchPlaygroundFeature(featureName) {
         generateCalculator();
     } else if (featureName === 'comparison') {
         generateComparison();
-    } else if (featureName === 'battle') {
-        generateBattle();
+    } else if (featureName === '3d-viz') {
+        generate3DVisualization();
     }
 }
 
@@ -4857,367 +4857,688 @@ function exportComparison() {
 }
 
 // ===========================
-// PROPERTY BATTLE ROYALE
+// 3D VISUALIZATION ENGINE
 // ===========================
 
-// Global Battle State
-let battleTournamentSize = 0;
-let battleSelectedProperties = [];
-let battleTournamentBracket = [];
-let battleCurrentRound = 0;
-let battleCurrentMatchup = 0;
-let battleWinners = [];
+// Global 3D State
+let viz3dScene = null;
+let viz3dCamera = null;
+let viz3dRenderer = null;
+let viz3dControls = null;
+let viz3dPropertyMeshes = [];
+let viz3dLabels = [];
+let viz3dGrid = null;
+let viz3dCurrentMode = 'value-triangle';
+let viz3dColorMode = 'property-type';
+let viz3dSizeMode = 'bedrooms';
+let viz3dSelectedProperty = null;
+let viz3dAnimationId = null;
 
-// Generate Battle (called when switching to battle sub-tab)
-function generateBattle() {
-    console.log('Generating Battle Royale');
-    resetBattleState();
-    document.getElementById('battleSetup').style.display = 'block';
-    document.getElementById('battleArena').style.display = 'none';
-    document.getElementById('championCeremony').style.display = 'none';
-}
-
-// Reset Battle State
-function resetBattleState() {
-    battleTournamentSize = 0;
-    battleSelectedProperties = [];
-    battleTournamentBracket = [];
-    battleCurrentRound = 0;
-    battleCurrentMatchup = 0;
-    battleWinners = [];
-}
-
-// Select Tournament Size
-function selectTournamentSize(size) {
-    console.log('Selected tournament size:', size);
+// Initialize 3D Visualization (called when switching to 3d-viz sub-tab)
+function generate3DVisualization() {
+    console.log('Generating 3D Visualization with', currentProperties.length, 'properties');
     
-    if (!currentProperties || currentProperties.length < size) {
-        alert(`You need at least ${size} properties to run this tournament. Please search for more properties.`);
+    if (!currentProperties || currentProperties.length === 0) {
+        alert('No properties to visualize! Please search for properties first.');
         return;
     }
     
-    battleTournamentSize = size;
+    // Initialize Three.js scene
+    init3DScene();
     
-    // Update UI
-    document.querySelectorAll('.size-option-btn').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    event.target.closest('.size-option-btn').classList.add('selected');
+    // Create property spheres
+    create3DProperties();
     
-    // Show property selection
-    document.getElementById('propertySelectionForBattle').style.display = 'block';
-    document.getElementById('requiredPropertyCount').textContent = size;
-    document.getElementById('battleRequiredCount').textContent = size;
+    // Update stats
+    update3DStats();
     
-    // Reset selection
-    battleSelectedProperties = [];
-    updateBattlePropertyGrid();
+    // Start animation loop
+    animate3D();
 }
 
-// Update Battle Property Grid
-function updateBattlePropertyGrid() {
-    const grid = document.getElementById('battlePropertyGrid');
-    grid.innerHTML = '';
+// Initialize Three.js Scene
+function init3DScene() {
+    const container = document.getElementById('viz3dCanvas');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
     
-    currentProperties.forEach((property, index) => {
-        const isSelected = battleSelectedProperties.includes(index);
-        const isDisabled = !isSelected && battleSelectedProperties.length >= battleTournamentSize;
-        
-        const card = document.createElement('div');
-        card.className = `comparison-property-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}`;
-        card.onclick = () => toggleBattlePropertySelection(index);
-        
-        const address = property.address?.street || property.area_name || `Property ${index + 1}`;
-        const price = formatCurrency(property.price);
-        const beds = property.attributes?.bedrooms || 'N/A';
-        const baths = property.attributes?.bathrooms || 'N/A';
-        
-        card.innerHTML = `
-            <div class="property-card-checkbox">
-                ${isSelected ? '<i class="fas fa-check"></i>' : ''}
-            </div>
-            <div style="font-size: 1.3rem; font-weight: 700; color: var(--accent-color); margin-bottom: 0.5rem;">
-                ${price}
-            </div>
-            <div style="color: var(--text-primary); margin-bottom: 0.8rem; font-size: 0.95rem;">
-                ${address}
-            </div>
-            <div style="display: flex; gap: 1rem; color: var(--text-secondary); font-size: 0.9rem;">
-                <span><i class="fas fa-bed"></i> ${beds}</span>
-                <span><i class="fas fa-bath"></i> ${baths}</span>
-            </div>
-        `;
-        
-        grid.appendChild(card);
-    });
-    
-    // Update count and button
-    document.getElementById('battleSelectedCount').textContent = battleSelectedProperties.length;
-    const startBtn = document.querySelector('.btn-start-tournament');
-    startBtn.disabled = battleSelectedProperties.length !== battleTournamentSize;
-}
-
-// Toggle Battle Property Selection
-function toggleBattlePropertySelection(index) {
-    const selectedIndex = battleSelectedProperties.indexOf(index);
-    
-    if (selectedIndex > -1) {
-        battleSelectedProperties.splice(selectedIndex, 1);
-    } else {
-        if (battleSelectedProperties.length < battleTournamentSize) {
-            battleSelectedProperties.push(index);
+    // Clean up existing scene if any
+    if (viz3dRenderer) {
+        viz3dRenderer.dispose();
+        if (viz3dAnimationId) {
+            cancelAnimationFrame(viz3dAnimationId);
         }
     }
     
-    updateBattlePropertyGrid();
-}
-
-// Start Tournament
-function startTournament() {
-    console.log('Starting tournament with', battleSelectedProperties.length, 'properties');
+    // Scene
+    viz3dScene = new THREE.Scene();
+    viz3dScene.background = new THREE.Color(0x000000);
+    viz3dScene.fog = new THREE.Fog(0x000000, 50, 200);
     
-    // Build initial bracket
-    battleTournamentBracket = battleSelectedProperties.map(i => ({
-        propertyIndex: i,
-        property: currentProperties[i],
-        wins: 0
-    }));
+    // Camera
+    viz3dCamera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000);
+    viz3dCamera.position.set(40, 40, 40);
+    viz3dCamera.lookAt(0, 0, 0);
     
-    // Shuffle for randomness
-    battleTournamentBracket = shuffleArray(battleTournamentBracket);
-    
-    // Initialize tournament
-    battleCurrentRound = 1;
-    battleCurrentMatchup = 0;
-    battleWinners = [];
-    
-    // Hide setup, show arena
-    document.getElementById('battleSetup').style.display = 'none';
-    document.getElementById('battleArena').style.display = 'block';
-    document.querySelector('.btn-restart-tournament').style.display = 'block';
-    
-    // Show first matchup
-    showCurrentMatchup();
-}
-
-// Shuffle Array
-function shuffleArray(array) {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-}
-
-// Show Current Matchup
-function showCurrentMatchup() {
-    const matchupIndex = battleCurrentMatchup * 2;
-    
-    if (matchupIndex >= battleTournamentBracket.length) {
-        // Round complete, advance winners
-        advanceToNextRound();
-        return;
-    }
-    
-    const property1 = battleTournamentBracket[matchupIndex];
-    const property2 = battleTournamentBracket[matchupIndex + 1];
-    
-    if (!property2) {
-        // Odd number, property1 gets a bye
-        battleWinners.push(property1);
-        battleCurrentMatchup++;
-        showCurrentMatchup();
-        return;
-    }
-    
-    // Update round info
-    const roundNames = ['Quarter-Finals', 'Semi-Finals', 'Finals'];
-    const roundName = battleTournamentSize === 8 ? roundNames[battleCurrentRound - 1] : 
-                     (battleCurrentRound === 1 ? 'Semi-Finals' : 'Finals');
-    document.getElementById('currentRoundBadge').textContent = roundName;
-    
-    const totalMatchups = Math.floor(battleTournamentBracket.length / 2);
-    document.getElementById('matchupProgress').textContent = `Matchup ${battleCurrentMatchup + 1} of ${totalMatchups}`;
-    
-    // Render matchup cards
-    renderMatchupCard('leftProperty', property1, 'left');
-    renderMatchupCard('rightProperty', property2, 'right');
-}
-
-// Render Matchup Card
-function renderMatchupCard(containerId, propertyData, side) {
-    const container = document.getElementById(containerId);
-    const property = propertyData.property;
-    
-    const address = property.address?.street || property.area_name || 'Property';
-    const price = formatCurrency(property.price);
-    const beds = property.attributes?.bedrooms || 'N/A';
-    const baths = property.attributes?.bathrooms || 'N/A';
-    const garage = property.attributes?.garage_spaces || 'N/A';
-    const landSize = property.attributes?.land_size || 'N/A';
-    
-    container.innerHTML = `
-        <div class="property-name">${address}</div>
-        <div class="property-price">${price}</div>
-        <div class="property-stats">
-            <div class="stat-item">
-                <i class="fas fa-bed"></i>
-                <span>${beds} Beds</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-bath"></i>
-                <span>${baths} Baths</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-car"></i>
-                <span>${garage} Garage</span>
-            </div>
-            <div class="stat-item">
-                <i class="fas fa-ruler-combined"></i>
-                <span>${landSize} m²</span>
-            </div>
-        </div>
-        <button class="btn-vote" onclick="voteForProperty('${side}')">
-            <i class="fas fa-hand-point-up"></i> Vote for This Property
-        </button>
-    `;
-}
-
-// Vote for Property
-function voteForProperty(side) {
-    const matchupIndex = battleCurrentMatchup * 2;
-    const winner = side === 'left' ? 
-        battleTournamentBracket[matchupIndex] : 
-        battleTournamentBracket[matchupIndex + 1];
-    
-    console.log('Voted for:', side, winner);
-    
-    // Increment wins
-    winner.wins++;
-    
-    // Add to winners array
-    battleWinners.push(winner);
-    
-    // Visual feedback
-    const winnerCard = document.getElementById(side === 'left' ? 'leftProperty' : 'rightProperty');
-    winnerCard.classList.add('selected');
-    
-    // Move to next matchup after delay
-    setTimeout(() => {
-        battleCurrentMatchup++;
-        showCurrentMatchup();
-    }, 800);
-}
-
-// Advance to Next Round
-function advanceToNextRound() {
-    if (battleWinners.length === 1) {
-        // We have a champion!
-        showChampion(battleWinners[0]);
-        return;
-    }
-    
-    // Setup next round
-    battleTournamentBracket = battleWinners;
-    battleWinners = [];
-    battleCurrentRound++;
-    battleCurrentMatchup = 0;
-    
-    // Show next matchup
-    showCurrentMatchup();
-}
-
-// Show Champion
-function showChampion(champion) {
-    console.log('Tournament Champion:', champion);
-    
-    const property = champion.property;
-    const address = property.address?.street || property.area_name || 'Champion Property';
-    const price = formatCurrency(property.price);
-    const beds = property.attributes?.bedrooms || 'N/A';
-    const baths = property.attributes?.bathrooms || 'N/A';
-    const garage = property.attributes?.garage_spaces || 'N/A';
-    
-    // Hide arena, show ceremony
-    document.getElementById('battleArena').style.display = 'none';
-    document.getElementById('championCeremony').style.display = 'block';
-    
-    // Populate champion details
-    document.getElementById('championProperty').innerHTML = `
-        <div class="property-name">${address}</div>
-        <div class="property-price">${price}</div>
-        <div class="property-details">
-            <span><i class="fas fa-bed"></i> ${beds}</span>
-            <span><i class="fas fa-bath"></i> ${baths}</span>
-            <span><i class="fas fa-car"></i> ${garage}</span>
-        </div>
-    `;
-    
-    // Show stats
-    document.getElementById('championWins').textContent = champion.wins;
-    document.getElementById('propertiesDefeated').textContent = battleTournamentSize - 1;
-    
-    // Create confetti
-    createConfetti();
-}
-
-// Create Confetti
-function createConfetti() {
-    const container = document.getElementById('confetti');
-    container.innerHTML = '';
-    
-    const colors = ['#fd7700', '#10b981', '#3b82f6', '#ef4444', '#f59e0b'];
-    
-    for (let i = 0; i < 50; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti-piece';
-        confetti.style.left = Math.random() * 100 + '%';
-        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.animationDelay = Math.random() * 2 + 's';
-        confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
-        container.appendChild(confetti);
-    }
-}
-
-// Restart Tournament
-function restartTournament() {
-    resetBattleState();
-    document.getElementById('battleSetup').style.display = 'block';
-    document.getElementById('battleArena').style.display = 'none';
-    document.getElementById('championCeremony').style.display = 'none';
-    document.querySelector('.btn-restart-tournament').style.display = 'none';
-    
-    // Reset size selection
-    document.querySelectorAll('.size-option-btn').forEach(btn => {
-        btn.classList.remove('selected');
+    // Renderer
+    viz3dRenderer = new THREE.WebGLRenderer({ 
+        canvas: container, 
+        antialias: true,
+        alpha: true 
     });
-    document.getElementById('propertySelectionForBattle').style.display = 'none';
+    viz3dRenderer.setSize(width, height);
+    viz3dRenderer.setPixelRatio(window.devicePixelRatio);
+    
+    // Lights
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    viz3dScene.add(ambientLight);
+    
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(50, 50, 50);
+    viz3dScene.add(directionalLight);
+    
+    const pointLight = new THREE.PointLight(0xfd7700, 1, 100);
+    pointLight.position.set(0, 20, 0);
+    viz3dScene.add(pointLight);
+    
+    // Grid
+    viz3dGrid = new THREE.GridHelper(100, 20, 0xfd7700, 0x333333);
+    viz3dScene.add(viz3dGrid);
+    
+    // Simple mouse controls (rotation)
+    setupMouseControls();
+    
+    // Handle window resize
+    window.addEventListener('resize', onWindowResize3D);
 }
 
-// Toggle Bracket View
-function toggleBracket() {
-    const bracket = document.getElementById('tournamentBracket');
-    const toggleText = document.getElementById('bracketToggleText');
+// Setup Mouse Controls
+function setupMouseControls() {
+    const canvas = document.getElementById('viz3dCanvas');
+    let isDragging = false;
+    let previousMousePosition = { x: 0, y: 0 };
+    let isRightClick = false;
     
-    if (bracket.style.display === 'none') {
-        bracket.style.display = 'block';
-        toggleText.textContent = 'Hide Bracket';
-        // TODO: Build bracket visualization
-        bracket.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 2rem;">Bracket visualization coming soon!</p>';
-    } else {
-        bracket.style.display = 'none';
-        toggleText.textContent = 'Show Bracket';
+    canvas.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        isRightClick = e.button === 2;
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    canvas.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - previousMousePosition.x;
+        const deltaY = e.clientY - previousMousePosition.y;
+        
+        if (isRightClick) {
+            // Pan camera
+            viz3dCamera.position.x -= deltaX * 0.1;
+            viz3dCamera.position.y += deltaY * 0.1;
+        } else {
+            // Rotate camera around origin
+            const rotationSpeed = 0.005;
+            const currentRadius = Math.sqrt(
+                viz3dCamera.position.x ** 2 + 
+                viz3dCamera.position.z ** 2
+            );
+            
+            const currentAngle = Math.atan2(viz3dCamera.position.z, viz3dCamera.position.x);
+            const newAngle = currentAngle - deltaX * rotationSpeed;
+            
+            viz3dCamera.position.x = currentRadius * Math.cos(newAngle);
+            viz3dCamera.position.z = currentRadius * Math.sin(newAngle);
+            
+            // Vertical rotation
+            viz3dCamera.position.y += deltaY * 0.2;
+            viz3dCamera.position.y = Math.max(5, Math.min(80, viz3dCamera.position.y));
+            
+            viz3dCamera.lookAt(0, 0, 0);
+        }
+        
+        previousMousePosition = { x: e.clientX, y: e.clientY };
+    });
+    
+    canvas.addEventListener('mouseup', () => {
+        isDragging = false;
+    });
+    
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+    });
+    
+    // Zoom with mouse wheel
+    canvas.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomSpeed = 0.001;
+        const delta = e.deltaY * zoomSpeed;
+        
+        // Move camera closer/further from origin
+        const direction = new THREE.Vector3();
+        direction.subVectors(viz3dCamera.position, new THREE.Vector3(0, 0, 0)).normalize();
+        
+        viz3dCamera.position.x += direction.x * delta * 50;
+        viz3dCamera.position.y += direction.y * delta * 50;
+        viz3dCamera.position.z += direction.z * delta * 50;
+        
+        // Clamp distance
+        const dist = viz3dCamera.position.length();
+        if (dist < 20) {
+            viz3dCamera.position.multiplyScalar(20 / dist);
+        } else if (dist > 150) {
+            viz3dCamera.position.multiplyScalar(150 / dist);
+        }
+    });
+    
+    // Click on properties
+    canvas.addEventListener('click', (e) => {
+        if (isDragging) return; // Ignore clicks while dragging
+        
+        const rect = canvas.getBoundingClientRect();
+        const mouse = {
+            x: ((e.clientX - rect.left) / rect.width) * 2 - 1,
+            y: -((e.clientY - rect.top) / rect.height) * 2 + 1
+        };
+        
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(mouse, viz3dCamera);
+        
+        const intersects = raycaster.intersectObjects(viz3dPropertyMeshes);
+        
+        if (intersects.length > 0) {
+            const mesh = intersects[0].object;
+            showPropertyInfo3D(mesh.userData.propertyIndex);
+        }
+    });
+}
+
+// Create 3D Property Spheres
+function create3DProperties() {
+    // Clear existing meshes
+    viz3dPropertyMeshes.forEach(mesh => viz3dScene.remove(mesh));
+    viz3dPropertyMeshes = [];
+    
+    // Calculate positions based on current view mode
+    const positions = calculate3DPositions();
+    
+    currentProperties.forEach((property, index) => {
+        const pos = positions[index];
+        
+        // Determine size
+        const size = getPropertySize3D(property);
+        
+        // Determine color
+        const color = getPropertyColor3D(property);
+        
+        // Create sphere
+        const geometry = new THREE.SphereGeometry(size, 32, 32);
+        const material = new THREE.MeshPhongMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.2,
+            shininess: 100,
+            transparent: true,
+            opacity: 0.9
+        });
+        
+        const sphere = new THREE.Mesh(geometry, material);
+        sphere.position.set(pos.x, pos.y, pos.z);
+        sphere.userData = { propertyIndex: index, property: property };
+        
+        // Add glow effect
+        const glowGeometry = new THREE.SphereGeometry(size * 1.2, 32, 32);
+        const glowMaterial = new THREE.MeshBasicMaterial({
+            color: color,
+            transparent: true,
+            opacity: 0.2,
+            side: THREE.BackSide
+        });
+        const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+        sphere.add(glow);
+        
+        viz3dScene.add(sphere);
+        viz3dPropertyMeshes.push(sphere);
+    });
+    
+    // Update legend
+    updateLegend3D();
+}
+
+// Calculate 3D Positions based on View Mode
+function calculate3DPositions() {
+    const positions = [];
+    
+    switch (viz3dCurrentMode) {
+        case 'value-triangle':
+            positions.push(...calculateValueTrianglePositions());
+            break;
+        case 'investment-focus':
+            positions.push(...calculateInvestmentFocusPositions());
+            break;
+        case 'galaxy':
+            positions.push(...calculateGalaxyPositions());
+            break;
+        case 'bubble':
+            positions.push(...calculateBubblePositions());
+            break;
+        default:
+            positions.push(...calculateValueTrianglePositions());
+    }
+    
+    return positions;
+}
+
+// Value Triangle: X=Price, Y=Size, Z=Value Score
+function calculateValueTrianglePositions() {
+    const positions = [];
+    
+    // Get min/max for normalization
+    const prices = currentProperties.map(p => p.price || 0).filter(p => p > 0);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    const sizes = currentProperties.map(p => {
+        const land = parseLandSize(p.attributes?.land_size || '0');
+        const building = parseFloat(p.attributes?.building_size || '0');
+        return land + building;
+    }).filter(s => s > 0);
+    const minSize = Math.min(...sizes);
+    const maxSize = Math.max(...sizes);
+    
+    currentProperties.forEach((property) => {
+        const price = property.price || minPrice;
+        const land = parseLandSize(property.attributes?.land_size || '0');
+        const building = parseFloat(property.attributes?.building_size || '0');
+        const totalSize = land + building;
+        
+        // Calculate value score (simple: price per sqm)
+        const pricePerSqm = totalSize > 0 ? price / totalSize : price / 100;
+        const avgPricePerSqm = prices.reduce((a, b, i) => {
+            const s = sizes[i] || 100;
+            return a + b / s;
+        }, 0) / prices.length;
+        const valueScore = avgPricePerSqm > 0 ? (1 - (pricePerSqm / avgPricePerSqm)) : 0;
+        
+        // Normalize to -30 to +30 range
+        const x = ((price - minPrice) / (maxPrice - minPrice)) * 60 - 30;
+        const y = ((totalSize - minSize) / (maxSize - minSize)) * 60 - 30;
+        const z = (valueScore) * 30; // Value score on Z axis
+        
+        positions.push({ x, y, z });
+    });
+    
+    return positions;
+}
+
+// Investment Focus: X=Price, Y=Land Size, Z=Price per Bedroom
+function calculateInvestmentFocusPositions() {
+    const positions = [];
+    
+    const prices = currentProperties.map(p => p.price || 0).filter(p => p > 0);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    const landSizes = currentProperties.map(p => parseLandSize(p.attributes?.land_size || '0')).filter(s => s > 0);
+    const minLand = Math.min(...landSizes);
+    const maxLand = Math.max(...landSizes);
+    
+    currentProperties.forEach((property) => {
+        const price = property.price || minPrice;
+        const land = parseLandSize(property.attributes?.land_size || '0');
+        const bedrooms = property.attributes?.bedrooms || 1;
+        const pricePerBed = price / bedrooms;
+        
+        const maxPricePerBed = maxPrice / 1; // Assume min 1 bedroom
+        
+        const x = ((price - minPrice) / (maxPrice - minPrice)) * 60 - 30;
+        const y = ((land - minLand) / (maxLand - minLand)) * 60 - 30;
+        const z = ((pricePerBed / maxPricePerBed)) * 60 - 30;
+        
+        positions.push({ x, y, z });
+    });
+    
+    return positions;
+}
+
+// Galaxy View: Scattered with animation
+function calculateGalaxyPositions() {
+    const positions = [];
+    const radius = 40;
+    
+    currentProperties.forEach((_, index) => {
+        const angle = (index / currentProperties.length) * Math.PI * 2;
+        const distance = radius * (0.5 + Math.random() * 0.5);
+        const height = (Math.random() - 0.5) * 30;
+        
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        const y = height;
+        
+        positions.push({ x, y, z });
+    });
+    
+    return positions;
+}
+
+// Bubble Chart: Organic clustering
+function calculateBubblePositions() {
+    const positions = [];
+    const clusters = 5;
+    
+    currentProperties.forEach((property, index) => {
+        const clusterIndex = index % clusters;
+        const clusterAngle = (clusterIndex / clusters) * Math.PI * 2;
+        const clusterRadius = 25;
+        
+        const clusterX = Math.cos(clusterAngle) * clusterRadius;
+        const clusterZ = Math.sin(clusterAngle) * clusterRadius;
+        
+        const x = clusterX + (Math.random() - 0.5) * 15;
+        const y = (Math.random() - 0.5) * 20;
+        const z = clusterZ + (Math.random() - 0.5) * 15;
+        
+        positions.push({ x, y, z });
+    });
+    
+    return positions;
+}
+
+// Get Property Size
+function getPropertySize3D(property) {
+    let size = 1;
+    
+    switch (viz3dSizeMode) {
+        case 'bedrooms':
+            size = (property.attributes?.bedrooms || 1) * 0.5;
+            break;
+        case 'land-size':
+            const land = parseLandSize(property.attributes?.land_size || '0');
+            size = Math.sqrt(land / 100);
+            break;
+        case 'total-features':
+            const beds = property.attributes?.bedrooms || 0;
+            const baths = property.attributes?.bathrooms || 0;
+            const garage = property.attributes?.garage_spaces || 0;
+            size = (beds + baths + garage) * 0.3;
+            break;
+    }
+    
+    return Math.max(0.5, Math.min(3, size));
+}
+
+// Get Property Color
+function getPropertyColor3D(property) {
+    switch (viz3dColorMode) {
+        case 'property-type':
+            return getColorByPropertyType(property.property_type);
+        case 'price-range':
+            return getColorByPriceRange(property.price);
+        case 'value-score':
+            return getColorByValueScore(property);
+        default:
+            return 0xfd7700;
     }
 }
 
-// View Final Bracket
-function viewFinalBracket() {
-    // Hide ceremony, show arena with bracket
-    document.getElementById('championCeremony').style.display = 'none';
-    document.getElementById('battleArena').style.display = 'block';
+function getColorByPropertyType(type) {
+    const typeColors = {
+        'House': 0x10b981,    // Green
+        'Unit': 0x3b82f6,     // Blue
+        'Apartment': 0x8b5cf6, // Purple
+        'Townhouse': 0xf59e0b, // Yellow
+        'Land': 0xef4444      // Red
+    };
     
-    // Force show bracket
-    document.getElementById('tournamentBracket').style.display = 'block';
-    document.getElementById('bracketToggleText').textContent = 'Hide Bracket';
+    return typeColors[type] || 0xfd7700; // Default orange
 }
+
+function getColorByPriceRange(price) {
+    if (!price) return 0x6b7280; // Gray for unknown
+    
+    if (price < 500000) return 0xfde047;      // Yellow - Affordable
+    if (price < 750000) return 0xfd7700;      // Orange - Entry
+    if (price < 1000000) return 0x10b981;     // Green - Mid
+    if (price < 1500000) return 0x3b82f6;     // Blue - High
+    return 0x8b5cf6;                          // Purple - Premium
+}
+
+function getColorByValueScore(property) {
+    const price = property.price || 0;
+    const land = parseLandSize(property.attributes?.land_size || '0');
+    const building = parseFloat(property.attributes?.building_size || '0');
+    const totalSize = land + building || 100;
+    
+    const pricePerSqm = price / totalSize;
+    
+    // Color gradient from red (bad) to green (good)
+    // Lower price per sqm = better value = greener
+    if (pricePerSqm < 1000) return 0x10b981;  // Green - Great value
+    if (pricePerSqm < 2000) return 0x84cc16;  // Light green
+    if (pricePerSqm < 3000) return 0xfd7700;  // Orange
+    if (pricePerSqm < 5000) return 0xef4444;  // Red
+    return 0xdc2626;                          // Dark red - Poor value
+}
+
+// Animation Loop
+function animate3D() {
+    viz3dAnimationId = requestAnimationFrame(animate3D);
+    
+    // Gentle rotation animation for galaxy view
+    if (viz3dCurrentMode === 'galaxy') {
+        viz3dPropertyMeshes.forEach((mesh, i) => {
+            mesh.rotation.y += 0.01;
+            mesh.position.y += Math.sin(Date.now() * 0.001 + i) * 0.01;
+        });
+    }
+    
+    // Render
+    if (viz3dRenderer && viz3dScene && viz3dCamera) {
+        viz3dRenderer.render(viz3dScene, viz3dCamera);
+    }
+}
+
+// Window Resize Handler
+function onWindowResize3D() {
+    if (!viz3dCamera || !viz3dRenderer) return;
+    
+    const container = document.getElementById('viz3dCanvas');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    viz3dCamera.aspect = width / height;
+    viz3dCamera.updateProjectionMatrix();
+    viz3dRenderer.setSize(width, height);
+}
+
+// Update Legend
+function updateLegend3D() {
+    const legend = document.getElementById('viz3dLegend');
+    let html = '';
+    
+    if (viz3dColorMode === 'property-type') {
+        html = `
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <div class="legend-label">House</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6;"></div>
+                <div class="legend-label">Unit</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8b5cf6;"></div>
+                <div class="legend-label">Apartment</div>
+            </div>
+        `;
+    } else if (viz3dColorMode === 'price-range') {
+        html = `
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fde047;"></div>
+                <div class="legend-label">< $500K</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fd7700;"></div>
+                <div class="legend-label">$500K - $750K</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <div class="legend-label">$750K - $1M</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #3b82f6;"></div>
+                <div class="legend-label">$1M - $1.5M</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #8b5cf6;"></div>
+                <div class="legend-label">> $1.5M</div>
+            </div>
+        `;
+    } else if (viz3dColorMode === 'value-score') {
+        html = `
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <div class="legend-label">Great Value</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #84cc16;"></div>
+                <div class="legend-label">Good Value</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #fd7700;"></div>
+                <div class="legend-label">Fair Value</div>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ef4444;"></div>
+                <div class="legend-label">Poor Value</div>
+            </div>
+        `;
+    }
+    
+    legend.innerHTML = html;
+}
+
+// Update 3D Stats
+function update3DStats() {
+    const prices = currentProperties.map(p => p.price).filter(p => p);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    document.getElementById('totalProperties3d').textContent = currentProperties.length;
+    document.getElementById('priceRange3d').textContent = `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`;
+    
+    // Find best value
+    const valueScores = currentProperties.map(p => {
+        const price = p.price || 0;
+        const land = parseLandSize(p.attributes?.land_size || '0');
+        return land > 0 ? price / land : Infinity;
+    });
+    const bestIndex = valueScores.indexOf(Math.min(...valueScores));
+    const bestProperty = currentProperties[bestIndex];
+    if (bestProperty) {
+        const address = bestProperty.address?.street || 'Unknown';
+        document.getElementById('bestValue3d').textContent = address.substring(0, 20) + '...';
+    }
+}
+
+// Show Property Info Overlay
+function showPropertyInfo3D(index) {
+    viz3dSelectedProperty = index;
+    const property = currentProperties[index];
+    
+    document.getElementById('viz3dInfo').style.display = 'block';
+    document.getElementById('infoAddress').textContent = property.address?.street || 'Unknown Address';
+    document.getElementById('infoPrice').textContent = formatPrice(property.price);
+    
+    const statsHTML = `
+        <div class="info-stat">
+            <div class="info-stat-label">Bedrooms</div>
+            <div class="info-stat-value">${property.attributes?.bedrooms || 'N/A'}</div>
+        </div>
+        <div class="info-stat">
+            <div class="info-stat-label">Bathrooms</div>
+            <div class="info-stat-value">${property.attributes?.bathrooms || 'N/A'}</div>
+        </div>
+        <div class="info-stat">
+            <div class="info-stat-label">Garage</div>
+            <div class="info-stat-value">${property.attributes?.garage_spaces || 'N/A'}</div>
+        </div>
+        <div class="info-stat">
+            <div class="info-stat-label">Land</div>
+            <div class="info-stat-value">${property.attributes?.land_size || 'N/A'}</div>
+        </div>
+    `;
+    document.getElementById('infoStats').innerHTML = statsHTML;
+}
+
+// Close Property Info
+function closePropertyInfo() {
+    document.getElementById('viz3dInfo').style.display = 'none';
+    viz3dSelectedProperty = null;
+}
+
+// View Property in 2D (switch to Property Finder tab)
+function viewPropertyIn2D() {
+    closePropertyInfo();
+    // Switch to Property Finder tab
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', i === 0);
+    });
+    document.querySelectorAll('.tab-panel').forEach((panel, i) => {
+        panel.classList.toggle('active', i === 0);
+    });
+    
+    // Scroll to property in grid (if visible)
+    const propertyCards = document.querySelectorAll('.property-card');
+    if (propertyCards[viz3dSelectedProperty]) {
+        propertyCards[viz3dSelectedProperty].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+}
+
+// Change View Mode
+function changeViewMode() {
+    viz3dCurrentMode = document.getElementById('viewMode').value;
+    document.getElementById('currentView3d').textContent = 
+        document.getElementById('viewMode').selectedOptions[0].text;
+    create3DProperties();
+}
+
+// Update Colors
+function updateColors() {
+    viz3dColorMode = document.getElementById('colorMode').value;
+    create3DProperties();
+}
+
+// Update Sizes
+function updateSizes() {
+    viz3dSizeMode = document.getElementById('sizeMode').value;
+    create3DProperties();
+}
+
+// Toggle Labels (placeholder)
+function toggleLabels() {
+    const show = document.getElementById('showLabels').checked;
+    console.log('Toggle labels:', show);
+    // TODO: Implement label rendering with THREE.CSS2DRenderer if needed
+}
+
+// Toggle Grid
+function toggleGrid() {
+    const show = document.getElementById('showGrid').checked;
+    viz3dGrid.visible = show;
+}
+
+// Toggle Connections (placeholder)
+function toggleConnections() {
+    const show = document.getElementById('showConnections').checked;
+    console.log('Toggle connections:', show);
+    // TODO: Implement connection lines between similar properties
+}
+
+// Reset Camera
+function resetCamera() {
+    if (viz3dCamera) {
+        viz3dCamera.position.set(40, 40, 40);
+        viz3dCamera.lookAt(0, 0, 0);
+    }
+}
+

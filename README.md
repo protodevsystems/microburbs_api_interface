@@ -161,7 +161,7 @@ The Playground features its own horizontal sub-navigation allowing you to switch
 - **📊 Timeline View** - Historical visualization  
 - **💰 Investment Calculator** - Comprehensive financial analysis
 - **⚖️ Property Comparison** - Side-by-side battle arena
-- **📁 Portfolio** - Coming Soon
+- **🎪 3D Visualization** - Interactive 3D property universe
 
 ---
 
@@ -442,66 +442,81 @@ After reviewing properties, the system analyzes your swipe patterns and generate
 - Partners needing objective comparison
 - Anyone struggling to choose between properties
 
-##### 🏆 Property Battle Royale
-**Tournament-style elimination game** - let properties compete in head-to-head matchups until a champion emerges:
+##### 🎪 3D Property Universe
+**Interactive 3D visualization** - explore properties in a mind-blowing 3D space where data becomes a visual universe:
 
-**🎮 Tournament Setup:**
-- Choose between 4 or 8 property tournaments
-- Select properties from your search results
-- Randomized bracket generation
-- Clear visual tournament size indicators
-- Real-time selection counter
+**🌌 View Modes:**
+- **Value Triangle**: X=Price, Y=Size, Z=Value Score - see the perfect balance
+- **Investment Focus**: X=Price, Y=Land Size, Z=Price per Bedroom - investor metrics in 3D
+- **Galaxy View**: Properties orbit in a stunning galactic formation with gentle animations
+- **Bubble Chart**: Organic clustering shows natural property groupings
 
-**⚔️ Head-to-Head Matchups:**
-- Side-by-side property cards
-- Detailed stats for each property:
-  - Price, Bedrooms, Bathrooms
-  - Garage spaces, Land size
-- Animated VS circle between cards
-- Vote buttons for winner selection
-- Visual feedback on selection
-- Smooth transitions between matchups
+**🎨 Visual Encoding:**
+- **Color Modes**:
+  - Property Type: Green (House), Blue (Unit), Purple (Apartment)
+  - Price Range: Rainbow gradient from yellow (affordable) to purple (premium)
+  - Value Score: Red (poor value) to green (great value)
+- **Size Modes**:
+  - Bedrooms: Bigger spheres = more bedrooms
+  - Land Size: Sphere size reflects land area
+  - Total Features: Combined beds + baths + garage
 
-**🎯 Tournament Progression:**
-- Automatic round advancement
-- Progressive elimination format
-- Round badges (Semi-Finals, Finals, etc.)
-- Matchup counter (1 of 4, etc.)
-- Win tracking for each property
-- 800ms delay between rounds for drama
+**🎮 Interactive Controls:**
+- **Mouse Controls**:
+  - Click & Drag: Rotate the entire 3D space
+  - Right-Click & Drag: Pan the camera
+  - Scroll: Zoom in/out smoothly
+  - Click Property: View detailed info overlay
+- **Control Panel**:
+  - Switch between 4 view modes on the fly
+  - Change color encoding instantly
+  - Adjust size representation
+  - Toggle grid, labels, and connections
 
-**🏅 Champion Ceremony:**
-- Animated confetti celebration
-- Bouncing trophy icon
-- Champion property spotlight
-- Tournament statistics:
-  - Total matchups won
-  - Properties defeated
-- "New Tournament" and "View Bracket" buttons
+**✨ Visual Effects:**
+- Glowing spheres with emissive materials
+- Fog effects for depth perception
+- Smooth animations in Galaxy mode
+- Dynamic lighting with point lights
+- Anti-aliasing for crisp rendering
 
-**✨ Features:**
-- Tournament bracket visualization (coming soon)
-- Collapsible bracket view
-- Restart tournament anytime
-- Shuffle algorithm for fairness
-- Responsive mobile design
-- Smooth animations throughout
+**📊 Live Stats:**
+- Total properties in 3D space
+- Price range visualization
+- Best value property highlight
+- Current view mode indicator
+
+**🎯 Features:**
+- Property info overlay on click
+- "View in 2D" button to jump to property card
+- Reset camera to default position
+- Real-time legend updates
+- Responsive to window resizing
+- WebGL-powered smooth rendering
 
 **🎯 Use Cases:**
-- Fun way to narrow down choices
-- Gamified property selection
-- Partner/family decision-making
-- Break analysis paralysis
-- Discover your true preferences
-- Interactive client presentations
+- Spot outliers and hidden gems visually
+- Understand market structure at a glance
+- Find property clusters and patterns
+- Compare value across all properties simultaneously
+- Impress clients with cutting-edge visualization
+- Make data-driven decisions intuitively
 
 **💡 Perfect For:**
-- Buyers overwhelmed with options
-- Couples needing to agree on a property
-- Interactive family decision sessions
-- Real estate agents engaging clients
-- Anyone who likes gamified experiences
-- Making difficult choices fun
+- Data-driven investors who love visualizations
+- Tech-savvy buyers wanting the latest tools
+- Real estate agents presenting to high-end clients
+- Anyone who finds traditional lists boring
+- People who think in 3D space
+- Professionals showcasing market analysis
+
+**🚀 Technical Highlights:**
+- Built with Three.js WebGL engine
+- 60 FPS smooth rendering
+- Dynamic material system
+- Real-time raycasting for mouse picking
+- Efficient mesh management
+- Multiple projection algorithms
 
 ---
 
@@ -758,15 +773,19 @@ Then navigate to `http://localhost:8000` in your browser.
    - Read smart recommendations
    - Click **Clear All** to start over
    
-   **🏆 Battle Royale:**
-   - Select tournament size (4 or 8 properties)
-   - Choose properties from your results
-   - Click **Start Tournament** button
-   - Vote in head-to-head matchups (LEFT vs RIGHT)
-   - Properties advance through rounds (Semi-Finals, Finals)
-   - Watch the champion ceremony with confetti 🎉
-   - View tournament bracket (coming soon)
-   - Click **New Tournament** to play again
+   **🎪 3D Visualization:**
+   - Properties render as glowing spheres in 3D space
+   - **Mouse controls**: Drag to rotate, right-drag to pan, scroll to zoom
+   - **View Mode dropdown**: Switch between Value Triangle, Investment Focus, Galaxy, or Bubble views
+   - **Color By dropdown**: Color by Property Type, Price Range, or Value Score
+   - **Size By dropdown**: Size spheres by Bedrooms, Land Size, or Total Features
+   - **Click any sphere**: View property details in overlay
+   - **View in 2D button**: Jump to that property in Property Finder
+   - **Reset View button**: Return camera to default position
+   - **Checkboxes**: Toggle grid, labels, and connections
+   - **Legend**: Shows what colors mean (bottom left)
+   - **Instructions**: Hover tooltips for controls (top left)
+   - **Stats panel**: See totals, price range, best value, current view
 
 8. **Sort and Filter**
    - Use the dropdown to sort by:
