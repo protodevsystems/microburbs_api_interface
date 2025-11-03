@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Microburbs - Professional Property Intelligence</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <i class="fas fa-building"></i>
+                <span>Microburbs</span>
+                <span class="badge">PRO</span>
+            </div>
+            <div class="nav-links">
+                <a href="#" class="active">Properties</a>
+                <a href="#">Market Insights</a>
+                <a href="#">Reports</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1>Professional Property Intelligence</h1>
+            <p>Access comprehensive property data and market insights for informed investment decisions</p>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="search-panel">
+            <div class="search-header">
+                <h2>Search Properties</h2>
+                <p>Enter a suburb to view available properties and market data</p>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    id="suburbInput" 
+                    placeholder="Enter suburb name (e.g., Belmont North, Newcastle, Lake Macquarie)" 
+                    value="Belmont North"
+                />
+                <button id="searchBtn" onclick="fetchSuburbData()">
+                    <span id="btnText">Search Properties</span>
+                    <span id="btnLoader" class="loader" style="display: none;"></span>
+                </button>
+            </div>
+            <p class="search-note">
+                <i class="fas fa-info-circle"></i>
+                <strong>Note:</strong> API access is limited to certain suburbs in NSW. If you receive an authorization error, try a different suburb.
+            </p>
+        </div>
+
+        <div id="results" class="results-container" style="display: none;">
+            <div class="results-header">
+                <div class="results-info">
+                    <h2><span id="suburbName"></span></h2>
+                    <p id="resultCount"></p>
+                </div>
+            <div class="results-controls">
+                <div class="export-dropdown">
+                    <button class="export-btn" onclick="toggleExportMenu()">
+                        <i class="fas fa-download"></i>
+                        <span>Export Data</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <div id="exportMenu" class="export-menu" style="display: none;">
+                        <button onclick="exportData('csv-all')">
+                            <i class="fas fa-file-csv"></i>
+                            Export All (CSV)
+                        </button>
+                        <button onclick="exportData('excel-all')">
+                            <i class="fas fa-file-excel"></i>
+                            Export All (Excel)
+                        </button>
+                        <button onclick="exportData('csv-properties')">
+                            <i class="fas fa-home"></i>
+                            Properties (CSV)
+                        </button>
+                        <button onclick="exportData('excel-properties')">
+                            <i class="fas fa-home"></i>
+                            Properties (Excel)
+                        </button>
+                        <button onclick="exportData('csv-metrics')">
+                            <i class="fas fa-chart-line"></i>
+                            Metrics (CSV)
+                        </button>
+                        <button onclick="exportData('excel-metrics')">
+                            <i class="fas fa-chart-line"></i>
+                            Metrics (Excel)
+                        </button>
+                        <button onclick="exportData('json')">
+                            <i class="fas fa-code"></i>
+                            Complete Report (JSON)
+                        </button>
+                    </div>
+                </div>
+                <select id="sortSelect" onchange="sortProperties()">
+                    <option value="price-high">Price: High to Low</option>
+                    <option value="price-low">Price: Low to High</option>
+                    <option value="bedrooms">Bedrooms</option>
+                    <option value="newest">Newest Listings</option>
+                </select>
+                <button class="view-toggle" onclick="toggleView()" title="Toggle view">
+                    <i class="fas fa-th-large"></i>
+                </button>
+            </div>
+            </div>
+
+            <!-- Investor Dashboard Section -->
+            <div class="investor-dashboard">
+                <div class="dashboard-header">
+                    <h3><i class="fas fa-chart-line"></i> Investment Intelligence Dashboard</h3>
+                    <p>Key metrics for informed investment decisions</p>
+                </div>
+
+                <!-- Financial Performance Metrics -->
+                <div class="metrics-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-dollar-sign"></i> Financial Performance
+                    </h4>
+                    <div id="financialMetrics" class="metrics-grid"></div>
+                </div>
+
+                <!-- Market Activity Metrics -->
+                <div class="metrics-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-chart-bar"></i> Market Activity
+                    </h4>
+                    <div id="marketActivityMetrics" class="metrics-grid"></div>
+                </div>
+
+                <!-- Location & Demographics -->
+                <div class="metrics-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-map-marked-alt"></i> Location & Demographics
+                    </h4>
+                    <div id="locationMetrics" class="metrics-grid"></div>
+                </div>
+
+                <!-- Risk & Opportunity Indicators -->
+                <div class="metrics-section">
+                    <h4 class="section-title">
+                        <i class="fas fa-shield-alt"></i> Risk & Opportunity
+                    </h4>
+                    <div id="riskMetrics" class="metrics-grid"></div>
+                </div>
+            </div>
+
+            <!-- Basic Market Stats -->
+            <div class="basic-stats-section">
+                <h3><i class="fas fa-home"></i> Current Listings Overview</h3>
+                <div id="marketStats" class="market-stats"></div>
+            </div>
+
+            <!-- Property Listings -->
+            <div class="properties-section">
+                <h3><i class="fas fa-building"></i> Available Properties</h3>
+                <div id="propertyGrid" class="property-grid"></div>
+            </div>
+        </div>
+
+        <div id="error" class="error-message" style="display: none;"></div>
+
+        <div id="loading" class="loading-overlay" style="display: none;">
+            <div class="loading-content">
+                <div class="spinner-large"></div>
+                <p>Loading property data...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="footer-content">
+            <p>&copy; 2025 Microburbs. Professional Property Intelligence Platform.</p>
+            <p class="disclaimer">Data provided for informational purposes only. Always conduct your own due diligence.</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>
+
